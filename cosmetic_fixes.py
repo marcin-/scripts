@@ -120,14 +120,14 @@ if __name__ == '__main__':
             write_file("/tmp/file.new", new_file)
             os.system("diff -usa /tmp/file.orig /tmp/file.new")
         ch = ''
-        if not options.nowrite:
-            if not options.yesall and not orig_file == new_file:
+        if not options.nowrite and not orig_file == new_file:
+            if not options.yesall:
                 print "Write changes? [Y/n]"
                 while not (ch == 'y' or ch == 'n' or ch == '\n'):
                     ch = getch()
                 if ch == "\n": ch = 'y'
                 print ch
-            write_file(f, new_file)
+            if ch == 'y'or options.yesall: write_file(f, new_file)
         elif not options.yesall:
             print "press a key"
             ch = getch()
