@@ -96,6 +96,7 @@ if __name__ == '__main__':
         new_file = []
         i = 0
         for line in orig_file.split("\n"):
+            if line.isspace(): line = ""
             if line.startswith("<?") or line.startswith("<!"):
                 new_file.append(line)
                 continue
