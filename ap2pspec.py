@@ -181,6 +181,24 @@ def get_all_patch_files(path):
                 else: patch_files_in_subdirs.append("%s/%s" % (root.replace(path, "")[1:], f))
     return sorted(patch_files_in_root) + sorted(patch_files_in_subdirs)
 
+def get_old_patches(patches):
+    old_patches = []
+    for p in patches:
+        old_patches.append(p.name)
+    return old_patches
+
+def get_new_patches(patches, path):
+    new_patches = []
+    old_patches = get_old_patches(patches)
+    for p in get_all_patch_files(path):
+        if not p in old_patches:
+            new_patches.append(p)
+    return new_patches
+
+def write_changes(spec, patches, notes):
+    spec = insert_patches(spec, patches, notes)   
+    write_file(specfile, "\n".join(spec))
+
 if __name__ == '__main__':
     pisi_cmd = "pisi" if os.getenv("USER") == "root" else "sudo pisi"
     specpath = os.getcwd()
@@ -189,7 +207,10 @@ if __name__ == '__main__':
     parser = OptionParser(usage)
     parser.add_option("-a", "--append", dest="append", help="appends new patche(s)")
     parser.add_option("-l", "--list-patches", action="store_true", dest="list", help="list pspec patches")
+    parser.add_option("-d", "--disable-patches", action="store_true", dest="disable", help="disable pspec patches")
+    parser.add_option("-e", "--enable-patches", action="store_true", dest="enable", help="enable pspec patches")
     parser.add_option("-n", "--list-new-patches", action="store_true", dest="listnew", help="list new patches")
+    parser.add_option("-s", "--select-to-apend", action="store_true", dest="select", help="select unused patches to append")
     (options,args) = parser.parse_args()
     try:
         specpath = args[0]
@@ -208,58 +229,81 @@ if __name__ == '__main__':
         sys.exit(1)
 
     spec, patches, patch_notes = cut_patches(read_spec(specfile))
-    workdir = get_workdir(actionfile)
-          
-    def get_old_patches(patches):
-        old_patches = []
+
+    def edit_patches(verbose = False, enable = [], disable = []):
+        c = 0
+        notes_dict = get_notes_dict(patch_notes)
         for p in patches:
-            old_patches.append(p.name)
-        return old_patches
-
-    def get_new_patches(patches, path):
-        new_patches = []
-        old_patches = get_old_patches(patches)
-        for p in get_all_patch_files(path):
-            if not p in old_patches:
-                new_patches.append(p)
-        return new_patches
-
-    if options.append:
+            if c in notes_dict:
+                for n in notes_dict[c]:
+                    if verbose: print "# %s" % n
+            c += 1
+            if str(c) in disable: 
+                p.enabled = False
+                print "%s disabled" % p.name
+            if str(c) in enable: 
+                p.enabled = True
+                print "%s enabled" % p.name
+            if verbose: print ("%d\t%s %s %s" % (c, ("E" if p.enabled else "D"), (p.level if p.level else "0"), p.name))
+        if c in notes_dict:
+            for n in notes_dict[c]:
+                if verbose: print "# %s" % n
+                
+    def unpack():
+        workdir = get_workdir(actionfile)
         os.system("%s bi %s --unpack" % (pisi_cmd, specfile))
         dirlist = filter(lambda x: os.path.isdir("/var/pisi/" + x), os.listdir("/var/pisi"))
         newest = "/var/pisi/" + max(dirlist, key=lambda x: os.stat("/var/pisi/" + x).st_mtime) + "/work"
-
         if workdir: workdir = os.path.normpath("%s/%s" % (newest, workdir))
         else: workdir = "%s/%s" % (newest, os.walk(newest).next()[1][0])
+        return workdir
 
+    def edit_new_patches(verbose = False, toappend = []):
+        workdir = unpack() if toappend else None
+        c = 0
+        for p in get_new_patches(patches, path):
+            c += 1
+            if str(c) in toappend: 
+                patches.append(Patch(check_level(workdir, get_dest(path + "/files/" + p)), p))
+            if verbose: print "%d\t%s" % (c, p)
+        return c
+          
+    if options.append:
+        workdir = unpack()
         path_glob = glob.glob(path + "/files/%s" % (options.append if not options.append.startswith("files/") else options.append[6:]))
         old_patches = get_old_patches(patches)
         for fp in path_glob:
             p = fp.split("/files/")[1]
             if not p in old_patches: 
                 patches.append(Patch(check_level(workdir, get_dest(fp)), p))
-        
-        spec = insert_patches(spec, patches, patch_notes)
+        write_changes(spec, patches, patch_notes)
     
-        write_file(specfile, "\n".join(spec))
-
-    if options.list:
+    if options.list or options.disable or options.enable:
         print "--- current patches (used in pspec.xml) ---"
-        c = 0
-        notes_dict = get_notes_dict(patch_notes)
-        for p in patches:
-            if c in notes_dict:
-                for n in notes_dict[c]:
-                    print "# %s" % n
-            c += 1
-            print ("%d\t%s %s %s" % (c, ("E" if p.enabled else "D"), (p.level if p.level else "0"), p.name))
-        if c in notes_dict:
-            for n in notes_dict[c]:
-                print "# %s" % n
+        edit_patches(verbose = True)
 
-    if options.listnew:
+    if options.disable:
+        disable = raw_input("enter patch numbers to disable: ")
+        disable = re.sub("(\d+)\D+", r"\1 ", disable)
+        edit_patches(disable = disable.split())
+        write_changes(spec, patches, patch_notes)
+        
+    if options.enable:
+        enable = raw_input("enter patch numbers to enable: ")
+        enable = re.sub("(\d+)\D+", r"\1 ", enable)
+        edit_patches(enable = enable.split())
+        write_changes(spec, patches, patch_notes)
+
+    if options.listnew or options.select:
         print "--- new patches (not used in pspec.xml) ---"
-        c = 0
-        for p in get_new_patches(patches, path):
-            c += 1
-            print "%d\t%s" % (c, p)
+        ret = edit_new_patches(verbose = True)
+        if options.select and ret == 0:
+            print "No new patches found. Exit."
+            sys.exit(0)
+    
+    if options.select:
+        toappend = raw_input("enter patch numbers to append: ")
+        toappend = re.sub("(\d+)\D+", r"\1 ", toappend)
+        edit_new_patches(toappend = toappend.split())
+        write_changes(spec, patches, patch_notes)
+        
