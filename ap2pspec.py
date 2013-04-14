@@ -37,6 +37,22 @@ def get_notes_dict(notes):
             notes_dict[n.index] = [n.note]
     return notes_dict
 
+def get_lowest_index(notes):
+    try:
+        return notes[0].index
+    except IndexError:
+        return 0
+
+def get_next_index(notes, group):
+    try:
+        i = notes[0].index
+    except IndexError:
+        return 0
+    for n in notes:
+        if n.index > group: return n.index
+        else: i = n.index + 1
+    return i
+
 def bgn_tag(data):
     if re.search(bgntag, data):
         return re.sub(bgntag, r"\1", data)
@@ -230,13 +246,13 @@ if __name__ == '__main__':
 
     spec, patches, patch_notes = cut_patches(read_spec(specfile))
 
-    def edit_patches(verbose = False, enable = [], disable = []):
+    def edit_patches(verbose = False, enable = [], disable = [], onlyGroups = False):
         c = 0
         notes_dict = get_notes_dict(patch_notes)
         for p in patches:
             if c in notes_dict:
                 for n in notes_dict[c]:
-                    if verbose: print "# %s" % n
+                    if verbose: print "# %d:'%s'" % (c, n)
             c += 1
             if str(c) in disable: 
                 p.enabled = False
@@ -244,10 +260,10 @@ if __name__ == '__main__':
             if str(c) in enable: 
                 p.enabled = True
                 print "%s enabled" % p.name
-            if verbose: print ("%d\t%s %s %s" % (c, ("E" if p.enabled else "D"), (p.level if p.level else "0"), p.name))
+            if verbose and not onlyGroups: print ("%d\t%s %s %s" % (c, ("E" if p.enabled else "D"), (p.level if p.level else "0"), p.name))
         if c in notes_dict:
             for n in notes_dict[c]:
-                if verbose: print "# %s" % n
+                if verbose: print "# %d:'%s'" % (c, n)
                 
     def unpack():
         workdir = get_workdir(actionfile)
@@ -258,13 +274,18 @@ if __name__ == '__main__':
         else: workdir = "%s/%s" % (newest, os.walk(newest).next()[1][0])
         return workdir
 
-    def edit_new_patches(verbose = False, toappend = []):
+    def edit_new_patches(verbose = False, toappend = [], group = None):
+        if not group and not group == 0: group_index = get_lowest_index(patch_notes)
+        else: group_index = get_next_index(patch_notes, group)
         workdir = unpack() if toappend else None
         c = 0
         for p in get_new_patches(patches, path):
             c += 1
             if str(c) in toappend: 
-                patches.append(Patch(check_level(workdir, get_dest(path + "/files/" + p)), p))
+                for n in patch_notes:
+                    if n.index >= group_index: n.index += 1
+                patches.insert(group_index, Patch(check_level(workdir, get_dest(path + "/files/" + p)), p))
+                group_index += 1
             if verbose: print "%d\t%s" % (c, p)
         return c
           
@@ -272,10 +293,14 @@ if __name__ == '__main__':
         workdir = unpack()
         path_glob = glob.glob(path + "/files/%s" % (options.append if not options.append.startswith("files/") else options.append[6:]))
         old_patches = get_old_patches(patches)
+        first_group_index = get_lowest_index(patch_notes)
         for fp in path_glob:
-            p = fp.split("/files/")[1]
-            if not p in old_patches: 
-                patches.append(Patch(check_level(workdir, get_dest(fp)), p))
+            ppath = fp.split("/files/")[1]
+            if not ppath in old_patches: 
+                for n in patch_notes:
+                    if n.index >= first_group_index: n.index += 1
+                patches.insert(first_group_index, Patch(check_level(workdir, get_dest(fp)), ppath))
+                first_group_index += 1
         write_changes(spec, patches, patch_notes)
     
     if options.list or options.disable or options.enable:
@@ -302,8 +327,16 @@ if __name__ == '__main__':
             sys.exit(0)
     
     if options.select:
+        print "--- current patches groups (used in pspec.xml) ---"
+        edit_patches(verbose = True, onlyGroups = True)
         toappend = raw_input("enter patch numbers to append: ")
-        toappend = re.sub("(\d+)\D+", r"\1 ", toappend)
-        edit_new_patches(toappend = toappend.split())
+        toappend = toappend.split("g")
+        try:
+            group = toappend[1]
+            group = int(group.strip())
+        except IndexError:
+            group  = None
+        toappend = re.sub("(\d+)\D+", r"\1 ", toappend[0])
+        edit_new_patches(toappend = toappend.split(), group = group)
         write_changes(spec, patches, patch_notes)
         
