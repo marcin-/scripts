@@ -282,9 +282,13 @@ if __name__ == '__main__':
         for p in get_new_patches(patches, path):
             c += 1
             if str(c) in toappend: 
+                l = check_level(workdir, get_dest(path + "/files/" + p))
+                if l == None:
+                    print "Cannot find file(s) to patch. Skipping %s" % p
+                    continue
                 for n in patch_notes:
                     if n.index >= group_index: n.index += 1
-                patches.insert(group_index, Patch(check_level(workdir, get_dest(path + "/files/" + p)), p))
+                patches.insert(group_index, Patch(l, p))
                 group_index += 1
             if verbose: print "%d\t%s" % (c, p)
         return c
@@ -296,10 +300,14 @@ if __name__ == '__main__':
         first_group_index = get_lowest_index(patch_notes)
         for fp in path_glob:
             ppath = fp.split("/files/")[1]
-            if not ppath in old_patches: 
+            if not ppath in old_patches:
+                l = check_level(workdir, get_dest(fp))
+                if l == None:
+                    print "Cannot find file(s) to patch. Skipping %s" % fp
+                    continue
                 for n in patch_notes:
                     if n.index >= first_group_index: n.index += 1
-                patches.insert(first_group_index, Patch(check_level(workdir, get_dest(fp)), ppath))
+                patches.insert(first_group_index, Patch(l, ppath))
                 first_group_index += 1
         write_changes(spec, patches, patch_notes)
     
@@ -327,7 +335,7 @@ if __name__ == '__main__':
             sys.exit(0)
     
     if options.select:
-        print "--- current patches groups (used in pspec.xml) ---"
+        print "--- current patches groups in pspec.xml ---"
         edit_patches(verbose = True, onlyGroups = True)
         toappend = raw_input("enter patch numbers to append: ")
         toappend = toappend.split("g")
