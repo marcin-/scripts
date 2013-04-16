@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import time
-import pisi
 import sys
 import os
 import re
 from optparse import OptionParser
 from pisi.specfile import SpecFile
-from numpy.numarray.alter_code1 import new_re
 
 RELEASE = """\
         <Update release="%(RELEASE)s">
