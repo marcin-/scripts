@@ -38,6 +38,7 @@ def get_and_save_user_info():
 
 if __name__ == "__main__":
     ver_ext_pattern = re.compile("^.+?-[\D^\-]*?([\d\.]+\d)[\D^\.]*?\.([\w\.]+)$")
+    types = ["targz", "tarbz2", "tarlzma", "tarxz", "tarZ", "tar", "zip", "gz", "gzip", "bz2", "bzip2", "lzma", "xz"]
 
     usage = "Usage: %prog [options] [PATH]"
     parser = OptionParser(usage)
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     info["VERSION"] = new_version
     new_release = RELEASE % info
     new_pspec = ''
+    if not new_type in types: new_type = "binary"
 
     for line in pspec.split("\n"):
         if "<Archive" in line:
@@ -115,6 +117,7 @@ if __name__ == "__main__":
         else: 
             if not new_pspec: new_pspec = line
             else: new_pspec = "\n".join((new_pspec, line))
+
     open(path, "w").write(new_pspec)
     open(path, "a").write("\n")
 
