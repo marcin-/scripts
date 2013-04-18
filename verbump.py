@@ -36,20 +36,7 @@ def get_and_save_user_info():
             open(conf_file, "a").write("%s\t= %s\n" % (i[0], res[i[0]]))
     return res
 
-if __name__ == "__main__":
-    ver_ext_pattern = re.compile("^.+?-[\D^\-]*?([\d\.]+\d)[\D^\.]*?\.([\w\.]+)$")
-    types = ["targz", "tarbz2", "tarlzma", "tarxz", "tarZ", "tar", "zip", "gz", "gzip", "bz2", "bzip2", "lzma", "xz"]
-
-    usage = "Usage: %prog [options] [PATH]"
-    parser = OptionParser(usage)
-    parser.add_option("-u", "--new-uri", dest="uri", help="version bump using specified uri")
-    parser.add_option("-v", "--new-version", dest="ver", help="version bump using specified version")
-    (options, args) = parser.parse_args()
-    try:
-        path = args[0]
-    except IndexError:
-        path = "."
-
+def bump(options, path):
     if path.endswith("/"): path = path[:-1]
     if not path.endswith("/pspec.xml"): path += "/pspec.xml"
     
@@ -67,25 +54,29 @@ if __name__ == "__main__":
 
     old_archive = specfile.source.archive 
     if len(old_archive) == 0:
-        print("No <Archive> found in %s." % path)
-        sys.exit(1)
-    elif len(old_archive) > 1:
+        print("No <Archive> tag found in %s." % path)
+        return
+    elif len(old_archive) > 1 and not options.many:
         print("Multiarchive pspec.xml not supported yet.")
         sys.exit(1)
     old_archive = old_archive[0].uri
     old_type = re.sub(ver_ext_pattern, "\\2", old_archive).replace(".", "")
     new_type = old_type
 
-    if not options.uri and not options.ver:
-        print old_archive
-        sys.exit(0)
-
     last = specfile.history[0]
     old_version = last.version
 
-    if options.uri and options.ver:
-        print "Using options -u and -v together not allowed"
-        sys.exit(1)
+    if options.many:
+        verfrom = options.many.split("-")[0]
+        new_version =  options.many.split("-")[1]
+        if not old_version == verfrom:
+            print "skipping %s, different versions" % specfile.source.name
+            return
+        new_archive = old_archive.replace(old_version, new_version)
+        print old_version, new_version
+    elif not options.many and not options.uri and not options.ver:
+        print old_archive
+        sys.exit(0)
     elif options.uri:
         if not options.uri.split(":")[0] in ["ftp", "file", "http", "https", "mirrors"]:
             print "Wrong uri: %s" % options.uri
@@ -140,3 +131,44 @@ if __name__ == "__main__":
 
     open(path, "w").write(new_pspec)
     open(path, "a").write("\n")
+    
+    return specfile.source.name
+
+if __name__ == "__main__":
+    ver_ext_pattern = re.compile("^.+?-[\D^\-]*?([\d\.]+\d)[\D^\.]*?\.([\w\.]+)$")
+    types = ["targz", "tarbz2", "tarlzma", "tarxz", "tarZ", "tar", "zip", "gz", "gzip", "bz2", "bzip2", "lzma", "xz"]
+
+    usage = "Usage: %prog [options] [PATH]"
+    parser = OptionParser(usage)
+    parser.add_option("-m", "--bump-many", dest="many", help="version bump for many packages")
+    parser.add_option("-u", "--new-uri", dest="uri", help="version bump using specified uri")
+    parser.add_option("-v", "--new-version", dest="ver", help="version bump using specified version")
+    (options, args) = parser.parse_args()
+    try:
+        path = args[0]
+    except IndexError:
+        path = "."
+
+    if options.uri and options.ver:
+        print "Using options -u and -v together not allowed"
+        sys.exit(1)
+    elif options.many and (options.uri or options.ver):
+        print "Using options -m with -u or -v not allowed"
+        sys.exit(1)
+    elif not options.many: bump(options, path)
+    else:
+        if not len(options.many.split("-")) == 2:
+            print "Wrong argument for option -m: %s\nYou have to write 'version from' and 'version to' separated by '-'\ne.g: -m x.y-x.z" % options.many
+            sys.exit(1)
+
+        bumped = []
+        for root, dirs, files in os.walk(path):
+            if "pspec.xml" in files:
+                name = bump(options, root)
+                if name: bumped.append(name)
+        
+        if not bumped: print "No bumped packages."
+        else:
+            print "Bumped packages:"
+            print "----------------"
+            for b in bumped: print b
