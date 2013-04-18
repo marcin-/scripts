@@ -73,7 +73,6 @@ def bump(options, path):
             print "skipping %s, different versions" % specfile.source.name
             return
         new_archive = old_archive.replace(old_version, new_version)
-        print old_version, new_version
     elif not options.many and not options.uri and not options.ver:
         print old_archive
         sys.exit(0)
@@ -99,7 +98,7 @@ def bump(options, path):
     if not new_type in types: new_type = "binary"
 
     for line in pspec.split("\n"):
-        if "<Archive" in line:
+        if "<Archive" in line and old_archive in line:
             new_line = line.split('>')
             new_line = new_line[0] + '>' + new_archive + '<' + new_line[1].split('<')[1] + '>'
             new_pspec = "\n".join((new_pspec, new_line))
@@ -117,13 +116,13 @@ def bump(options, path):
     else:
         os.system("pisi build %s --fetch" % path)
 
-    sha1sum = os.popen("sha1sum /var/cache/pisi/archives/%s" % os.path.basename(new_archive)).read().split()[0]
     pspec = open(path, "r").read().strip()
     new_pspec = ''
     for line in pspec.split("\n"):
-        if "<Archive" in line:
+        if "<Archive" in line and os.path.basename(new_archive) in line:
+            sha1sum = os.popen("sha1sum /var/cache/pisi/archives/%s" % os.path.basename(new_archive)).read().split()[0]
             new_line = re.sub("(.*sha1sum=)[\"\'][^\"^\']+[\"\'](.*)", r'\1"%s"\2' % sha1sum, line)
-            new_line = re.sub("(.*type=)[\"\'][^\"^\']+[\"\'](.*)", r'\1"%s"\2' % new_type, line)
+            new_line = re.sub("(.*type=)[\"\'][^\"^\']+[\"\'](.*)", r'\1"%s"\2' % new_type, new_line)
             new_pspec = "\n".join((new_pspec, new_line))
         else: 
             if not new_pspec: new_pspec = line
