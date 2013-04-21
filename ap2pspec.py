@@ -270,8 +270,10 @@ if __name__ == '__main__':
         os.system("%s bi %s --unpack" % (pisi_cmd, specfile))
         dirlist = filter(lambda x: os.path.isdir("/var/pisi/" + x), os.listdir("/var/pisi"))
         newest = "/var/pisi/" + max(dirlist, key=lambda x: os.stat("/var/pisi/" + x).st_mtime) + "/work"
-        if workdir: workdir = os.path.normpath("%s/%s" % (newest, workdir))
-        else: workdir = "%s/%s" % (newest, os.walk(newest).next()[1][0])
+        if workdir:
+            workdir = os.path.normpath("%s/%s" % (newest, workdir))
+            if os.path.isdir(workdir): return workdir
+        workdir = "%s/%s" % (newest, os.walk(newest).next()[1][0])
         return workdir
 
     def edit_new_patches(verbose = False, toappend = [], group = None):
@@ -290,6 +292,7 @@ if __name__ == '__main__':
                     if n.index >= group_index: n.index += 1
                 patches.insert(group_index, Patch(l, p))
                 group_index += 1
+                print "Adding patch: %s" % p
             if verbose: print "%d\t%s" % (c, p)
         return c
           
