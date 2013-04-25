@@ -60,7 +60,7 @@ if __name__ == "__main__":
         if not args:
             print "%s needs at least one param." % cmd
             sys.exit(usage())
-        sys.exit(subprocess.call(["buildfarm-%s %s" % (cmd, " ".join(args))]))
+        sys.exit(subprocess.call(["buildfarm-%s" % cmd] + [" ".join(args)]))
     else:
         sys.exit(usage())
 
