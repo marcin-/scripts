@@ -15,6 +15,7 @@ COMMANDS_NOPARAM = {
 COMMANDS_WITH_PARAMS = {
                            "add_components": "Adds components to work queue",
                            "add_packages": "Adds packages to work queue",
+                           "clean": "cleans specified waitqueue and/or workqueue files"
                         }
 
 def print_help (commands):
