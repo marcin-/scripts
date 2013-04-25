@@ -43,22 +43,6 @@ if __name__ == "__main__":
         pspec_list += os.popen("find %s -name 'pspec.xml'" % d).read().strip().split("\n")
 
     for pkg in pspec_list:
-        try:
-            spec = pisi.specfile.SpecFile(pkg)
-        except Exception, e:
-            sys.stderr.write("%s\n" % e)
-        else:
-            if conf.architecture in spec.source.excludeArch:
-                continue
-
-            ver = spec.history[0].version
-            release = spec.history[0].release
-
-            for subpkg in spec.packages:
-                expected_file = pisi.util.package_filename(subpkg.name, ver, release)
-                if os.path.exists(os.path.join(binary_dir, expected_file)):
-                    break
-            else:
-                missing_pkgs.add(pkg)
+        missing_pkgs.add(pkg)
 
     print "\n".join(sorted(list(missing_pkgs)))
