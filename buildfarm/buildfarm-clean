@@ -3,7 +3,6 @@
 
 import os
 import sys
-import pisi
 
 from buildfarm.config import configuration as conf
 
