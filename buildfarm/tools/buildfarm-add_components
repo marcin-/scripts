@@ -1,0 +1,55 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import pisi
+
+from buildfarm.config import configuration as conf
+from buildfarm import utils
+
+if __name__ == "__main__":
+
+    components = sys.argv[1:]
+
+    source_repo = utils.git_icin_yerel_konum()
+    binary_dir = utils.get_compiled_packages_directory()
+
+    missing_pkgs = set()
+    found_components = []
+    pspec_list = []
+
+    component_list = os.popen("find %s -name 'component.xml'" % source_repo).read().strip().split("\n")
+
+    for c in component_list:
+
+        try:
+            component = pisi.component.Component(c)
+        except Exception, e:
+            sys.stderr.write("%s\n" % e)
+        else:
+            if component.name in components:
+                found_components.append(os.path.dirname(c))
+                components.remove(component.name)
+                if not components: break
+
+    if components:
+        sys.stderr.write("Cannot find component(s):\n- ")
+        sys.stderr.write("\n- ".join(components))
+        sys.stderr.write("\n")
+        sys.exit(1)
+
+    for d in found_components:
+        pspec_list += os.popen("find %s -name 'pspec.xml'" % d).read().strip().split("\n")
+
+    for pkg in pspec_list:
+        try:
+            spec = pisi.specfile.SpecFile(pkg)
+        except Exception, e:
+            sys.stderr.write("%s\n" % e)
+        else:
+            if conf.architecture in spec.source.excludeArch:
+                continue
+            missing_pkgs.add(pkg)
+
+    print "\n".join(sorted(list(missing_pkgs)))
