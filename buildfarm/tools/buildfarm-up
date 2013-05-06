@@ -22,7 +22,7 @@ from buildfarm.config import configuration as conf
 
 class RepositoryManager:
     def __init__(self):
-        self.local_pspec_repo = utils.git_icin_yerel_konum()
+        self.local_pspec_repo = utils.get_local_repository_url()
         self.queue_manager = queuemanager.QueueManager()
         self.queue_manager.transfer_all_packages_to_work_queue()
 
@@ -34,15 +34,15 @@ class RepositoryManager:
         self.same_release_updates = []
         self.excluded_arch_packages = []
 
-        print "\nUpdating repository %s" % (utils.get_local_repository_url())
-
         if conf.scm == "svn":
+            print "\nUpdating repository %s" % (utils.get_local_repository_url())
             process = subprocess.Popen(["svn", "up", self.local_pspec_repo],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
-        if conf.scm == "git":
+        elif conf.scm == "git":
+            print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
             oldwd = os.getcwd()
-            os.chdir(self.local_pspec_repo+"/"+conf.name)
+            os.chdir(utils.get_local_git_repository_url())
             process = subprocess.Popen(["git", "pull"],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
@@ -52,10 +52,11 @@ class RepositoryManager:
         if process.returncode != 0 and conf.scm == "svn":
             print "A problem with SVN occurred while updating repository, exiting."
             sys.exit(process.returncode)
-        else:
+        elif conf.scm == "svn":
             # List of lists
-            print self.output
             self.output = [line.split() for line in self.output.split("\n") if line]
+        elif conf.scm == "git":
+            pass # TODO
 
     def get_changes(self, commit_type, search_for=""):
         results = []
