@@ -295,10 +295,10 @@ def update_local_repo_index(get_list = False):
     if get_list: return pspeclist
  
 def filter_pspec_list(pspec_list):
-    binary_dir = utils.get_compiled_packages_directory()
+    binary_dir = get_compiled_packages_directory()
     missing_pkgs = set()
 
-    for pkg in queue:
+    for pkg in pspec_list:
         try:
             spec = pisi.specfile.SpecFile(pkg)
         except Exception, e:
