@@ -46,17 +46,11 @@ def setup_repository():
             print "%s is checked out, skipping." % local_url
     # git deposundan dosya indirme özelliği sadece github altında denenmiştir.
     if conf.scm == "git":
-        if os.path.isdir(local_git):
+        if os.path.isdir("%s/.git" % local_git):
+            print "%s/.git already exists." % local_git
+        else:
             oldwd = os.getcwd()
-            os.chdir(local_git)
-            if commands.getoutput("git pull") != "Already up-to-date.":
-                print "Removing %s ..." % local_git
-                os.system("rm -Rf %s" % local_git)
-            else:
-                print "%s is up to date." % local_git
-            os.chdir(oldwd)
-        if not os.path.isdir(local_git):
-            oldwd = os.getcwd()
+            if os.path.isdir(local_git): os.system("rm -Rf %s" % local_git)
             os.chdir(os.path.dirname(local_git))
             print "%s will be checked out into %s" % (remote_url, local_git)
             os.system("git clone %s" % remote_url)
