@@ -1,0 +1,128 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Please read the COPYING file.
+#
+
+import os
+import sys
+import subprocess
+
+import pisi
+
+from buildfarm import utils
+from buildfarm import queuemanager
+from buildfarm.config import configuration as conf
+
+class RepositoryManager:
+    def __init__(self):
+        self.local_pspec_repo = utils.git_icin_yerel_konum()
+        self.queue_manager = queuemanager.QueueManager()
+        self.queue_manager.transfer_all_packages_to_work_queue()
+
+        self.output = []
+
+        self.final_queue = []
+        self.new_packages = []
+        self.updated_packages = []
+        self.same_release_updates = []
+        self.excluded_arch_packages = []
+
+        print "\nUpdating repository %s" % (self.local_pspec_repo)
+
+        if conf.scm == "svn":
+            process = subprocess.Popen(["svn", "up", self.local_pspec_repo],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
+        if conf.scm == "git":
+            process = subprocess.Popen(["git", "pull", self.local_pspec_repo+"/"+conf.name],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
+        self.output = process.communicate()[0]
+
+        if process.returncode != 0 and conf.scm == "svn":
+            print "A problem with SVN occurred while updating repository, exiting."
+            sys.exit(process.returncode)
+        else:
+            # List of lists
+            self.output = [line.split() for line in self.output.split("\n") if line]
+
+    def get_changes(self, commit_type, search_for=""):
+        results = []
+        for line in self.output:
+            if line[0] == commit_type and search_for in line[1]:
+                results.append(line[1])
+
+        return results
+
+    def manage(self):
+        self.new_packages = self.get_changes("A", "pspec.xml")
+        self.updated_packages = self.get_changes("U", "pspec.xml")
+
+        # Generate the biggest possible queue
+        self.final_queue.extend(self.new_packages)
+        self.final_queue.extend(self.updated_packages)
+        self.final_queue.extend(self.queue_manager.get_work_queue())
+        self.final_queue = list(set(self.final_queue))
+
+        # Now we'll filter out the excludearch and release-stayed-the-same
+        # packages.
+
+        for pspec in self.final_queue[:]:
+            if not os.path.exists(pspec):
+                print "Warning: %s doesn't exist, removing from the queue." % pspec
+                self.final_queue.remove(pspec)
+                continue
+
+            spec = pisi.specfile.SpecFile(pspec)
+            # First the release check
+            expected_pisi_file = os.path.join(utils.get_compiled_packages_directory(), \
+                    utils.get_expected_file_name(spec))
+            if os.path.exists(expected_pisi_file):
+                self.final_queue.remove(pspec)
+                self.same_release_updates.append(pspec)
+                # Not incrementing the release will bypass the arch test
+                continue
+
+            # Now the architecture check
+            if utils.is_arch_excluded(spec):
+                self.final_queue.remove(pspec)
+                self.excluded_arch_packages.append(pspec)
+
+        # Finally merge back the new queue
+        self.queue_manager.set_work_queue(self.final_queue)
+
+    def dump_summary(self):
+        if self.final_queue:
+            utils.print_header("List of packages to be built:")
+            print "\n".join(self.final_queue)
+
+        if self.excluded_arch_packages:
+            utils.print_header("List of ignored packages because of architecture mismatch:")
+            print "\n".join(self.excluded_arch_packages)
+
+        if self.same_release_updates:
+            utils.print_header("List of ignored packages caused by a missing history update:")
+            print "\n".join(self.same_release_updates)
+
+
+
+# Main program
+
+if __name__ == "__main__":
+
+    # Create RepositoryManager
+    repository_manager = RepositoryManager()
+
+    # Print current workqueue/waitqueue
+    repository_manager.queue_manager.dump_work_queue()
+    repository_manager.queue_manager.dump_wait_queue()
+
+    repository_manager.manage()
+    repository_manager.dump_summary()

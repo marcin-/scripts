@@ -1,0 +1,39 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import pisi
+import glob
+
+def usage():
+    print "Usage: %s [--clean] [target_dir]\n  Without --clean, %s will only list the packages." % ((sys.argv[0],)*2)
+
+if __name__ == "__main__":
+    clean = False
+
+    for arg in sys.argv[1:]:
+        if arg == "--clean":
+            clean = True
+        elif os.path.exists(os.path.expanduser(arg)):
+            os.chdir(os.path.expanduser(arg))
+
+    pkglist = []
+
+    # Gather file list
+    files = glob.glob("*.pisi")
+
+    # Parse index
+    indexed_files = [pkg.packageURI for pkg in pisi.index.Index("pisi-index.xml").packages]
+
+    pkglist = set(files).difference(indexed_files)
+
+    if clean:
+        # Remove packages
+        for pkg in pkglist:
+            print "Removing %s" % pkg
+            os.unlink(pkg)
+
+    else:
+        print "\n".join(sorted(pkglist))
+

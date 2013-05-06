@@ -1,0 +1,4 @@
+include README AUTHORS COPYING ChangeLog TODO
+include tools/buildfar*
+include data/*
+include hooks/*

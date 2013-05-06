@@ -1,0 +1,7 @@
+programming/environments/qdevelop/pspec.xml
+programming/libs/qwt/pspec.xml
+programming/languages/gambas/gambas2/pspec.xml
+desktop/kde/base/qt/pspec.xml
+desktop/kde/base/kdebase/pspec.xml
+programming/libs/qwtplot3d/pspec.xml
+desktop/kde4/base/kdelibs4/pspec.xml

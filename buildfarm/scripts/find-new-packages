@@ -1,0 +1,181 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import locale
+import multiprocessing
+
+import pisi
+from buildfarm import utils
+
+LEGEND = """\
+# Legend
+##########
+# A - New packages
+# U - Updates packages
+# S - Security update
+# C - Critical update
+"""
+
+class UpdateInfo:
+    def __init__(self, package):
+        self.name = package.source.name
+        self.version = package.history[0].version
+        self.release = package.history[0].release
+        self.owner = package.source.packager.name
+        self.comment = package.history[0].comment.splitlines()[0][:40]
+        if self.comment != package.history[0].comment:
+            self.comment += "..."
+        #FIXME url
+        self.url = "http://packages.pardus.org.tr/info/%s/testing/source/%s.html" % (utils.get_distribution_release(),
+                                                                                     self.name)
+
+def get_index(queue, index_path):
+    queue.put(pisi.index.Index(index_path))
+
+def main():
+    stable_packages = {}
+    diff_packages = {}
+    uri_dict = {}
+    updaters = {}
+    updates = {}
+
+    testing_dir = utils.get_compiled_packages_directory()
+    stable_dir = utils.get_stable_packages_directory()
+
+    if not stable_dir:
+        print "You don't have a stable repository on this buildfarm."
+        return 1
+
+    # Create index object threads
+    queue_testing = multiprocessing.Queue()
+    th_testing_index = multiprocessing.Process(target=get_index, args=(queue_testing, os.path.join(testing_dir, "pisi-index.xml")))
+    queue_stable = multiprocessing.Queue()
+    th_stable_index = multiprocessing.Process(target=get_index, args=(queue_stable, os.path.join(stable_dir, "pisi-index.xml")))
+
+    th_testing_index.start()
+    th_stable_index.start()
+
+    testing_index = queue_testing.get()
+    stable_index = queue_stable.get()
+
+    th_testing_index.join()
+    th_stable_index.join()
+
+    # Create a package mapping
+    for package in stable_index.packages:
+        stable_packages[package.name] = package
+
+    for package in testing_index.packages:
+        # Skip if it already exists in stable repository
+        if os.path.exists(os.path.join(stable_dir, package.packageURI)):
+            continue
+
+        # Assume that the package is completely new for stable repository
+        status = "A"
+        update_action = " "
+        history = package.history[:1]
+        old_release = ""
+
+        # Get the old package from stable repository
+        old_stable = stable_packages.get(package.name)
+        if old_stable:
+            # Stable has an older release so this is an (U)pdate
+            status = "U"
+            if package.has_update_type("security", old_stable.history[0].release):
+                # This is security
+                update_action = "S"
+            elif package.has_update_type("critical", old_stable.history[0].release):
+                # This is critical
+                update_action = "C"
+
+            # Get the latest history
+            history = package.history
+            old_release = old_stable.history[0].release
+
+        # Populate the diff_packages dictionary
+        try:
+            diff_packages[package.source.name].append((package, status, update_action))
+        except KeyError:
+            diff_packages[package.source.name] = [(package, status, update_action)]
+
+        # Add the source package to updates dictionary for updates.txt
+        if package.source.name not in updates:
+            updates[package.source.name] = UpdateInfo(package)
+
+        for update in history:
+            if update.release == old_release:
+                break
+
+            updater = update.name
+            updaters.setdefault(updater, set()).add(package.source.name)
+
+    # Check for dependencies
+    cdeps = {}
+    rev_cdeps = {}
+    for package_source_name in sorted(diff_packages.keys()):
+        # Sort according to packageURI
+        package_list = sorted(diff_packages[package_source_name], key=lambda x:x[0].packageURI)
+
+        for package in package_list:
+            package_metadata, status, update_action = package
+            subpackage_list = [pkg[0].name for pkg in package_list]
+            for dependency in package_metadata.runtimeDependencies():
+                if not dependency.satisfied_by_dict_repo(stable_packages) and \
+                        dependency.name() not in subpackage_list:
+                            cdeps[package_metadata.packageURI] = dependency.name()
+
+                            # Reverse dependencies
+                            try:
+                                rev_cdeps[dependency.name()].append(package_metadata.packageURI)
+                            except KeyError:
+                                rev_cdeps[dependency.name()] = [package_metadata.packageURI]
+
+    # Keep a list of package name -> URI mappings
+    for valuelist in diff_packages.values():
+        for val in valuelist:
+            package_metadata, status, update_action = val
+            uri_dict[package_metadata.name] = package_metadata.packageURI
+
+    # Check for dependencies
+    for package_source_name in sorted(diff_packages.keys()):
+        # Sort according to packageURI
+        package_list = sorted(diff_packages[package_source_name], key=lambda x:x[0].packageURI)
+
+        for package in package_list:
+            package_metadata, status, update_action = package
+
+            # Print updates
+            print "%s%s %s" % (status, update_action, package_metadata.packageURI)
+            if cdeps.has_key(package_metadata.packageURI):
+                # Use get as a workaround here since we cannot get binary package names if it has an AnyDependency 
+                print "#  Depends on %s" % uri_dict.get(cdeps[package_metadata.packageURI], cdeps[package_metadata.packageURI])
+
+            for revdep in rev_cdeps.get(package_metadata.name, []):
+                print "#  %s depends on this" % revdep
+
+        print
+
+    print LEGEND
+
+    # Get collate locale to sort updater names starts with unicode letters correctly
+    locale.setlocale(locale.LC_COLLATE, "")
+
+    # Dump updates.txt
+    with open("updates.txt", "w") as f:
+        for updater in sorted(updaters, cmp=locale.strcoll):
+            sources = updaters[updater]
+            f.write("%s:\n" % updater)
+            for source in sorted(sources):
+                info = updates[source]
+                f.write("     Source: %s ( %s )\n" % (source, info.url))
+                f.write("    Version: %s\n" % info.version)
+                f.write("    Release: %s (%s)\n" % (info.release, info.comment))
+                f.write("      Owner: %s\n" % info.owner)
+                f.write("\n\n")
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

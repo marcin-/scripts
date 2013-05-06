@@ -1,0 +1,71 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2010-2011 TUBITAK/UEKAE
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Please read the COPYING file.
+#
+
+import os,commands
+
+from buildfarm.config import configuration as conf
+from buildfarm import utils
+
+CONF_FILE = "/etc/buildfarm/buildfarm.conf"
+
+def check_config():
+    try:
+        print "Name: %s" % conf.name
+        print "Release: %s" % conf.release
+        print "Target architecture: %s" % conf.architecture
+        print "Sub repository: %s" % conf.subrepository
+        print "Repository directory: %s" % conf.repositorydir
+    except KeyError:
+        print "Please complete the missing fields in %s." % CONF_FILE
+        return False
+    else:
+        print "Base configuration is OK."
+        return True
+
+def setup_repository():
+    remote_url = utils.get_remote_repository_url()
+    local_url  = utils.git_icin_yerel_konum()
+    git_uzak   = utils.git_icin_uzak_konum()
+    git_yerel  = utils.git_icin_yerel_konum()
+
+    if conf.scm == "svn":
+        if os.system("svn info %s &> /dev/null" % local_url) > 0:
+            os.chdir(local_url)
+            print "%s will be checked out into %s" % (remote_url, local_url)
+            os.system("svn checkout %s ." % remote_url)
+        else:
+            print "%s is checked out, skipping." % local_url
+    # git deposundan dosya indirme özelliği sadece github altında denenmiştir.
+    if conf.scm == "git":
+        if os.path.isdir(git_yerel+"/"+conf.name) == True:
+            os.chdir(git_yerel+"/"+conf.name)
+            if commands.getoutput("git pull") != "Already up-to-date.":
+                print "%s\'dan güncellemeler alındı." % git_uzak
+                os.system("rm -Rf ../%s" % conf.release)
+                os.system("cp -Rf ./* ../")
+            else:
+                print "%s zaten güncel." % git_yerel
+        else:
+                os.chdir(git_yerel)
+                print "%s will be checked out into %s" % (git_uzak, git_yerel)
+                os.system("git clone %s" % git_uzak)
+                os.chdir(git_yerel+"/"+conf.name)
+                os.system("rm -Rf ../%s" % conf.release)
+                os.system("cp -Rf ./* ../")
+                   
+if __name__ == "__main__":
+    if check_config():
+        utils.create_directories()
+        setup_repository()
+
+

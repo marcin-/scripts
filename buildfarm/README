@@ -1,0 +1,11 @@
+buildfarm
+----------
+
+This is the buildfarm framework which compiles Pisi Linux source packages.
+
+The framework is completely written in Python. It interfaces to PiSi API
+for building and installing the binary packages found in the work queue.
+
+The buildfarm also builds delta packages containing only the modified files between
+consecutive buils.
+

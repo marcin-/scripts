@@ -1,0 +1,59 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import glob
+import pisi
+import shutil
+
+from buildfarm import utils
+
+def create_latest_repo_layout():
+
+    # e.g. /var/db/buildfarm/packages/corporate2/devel/x86_64
+    repo = utils.get_compiled_packages_directory()
+    repo_debug = utils.get_compiled_debug_packages_directory()
+
+    # latest repository
+    # e.g. /var/db/buildfarm/packages/corporate2/devel/x86_64-latest
+    latest_repo = "%s-latest" % repo
+    latest_repo_debug = "%s-latest" % repo_debug
+
+    for repository in (latest_repo, latest_repo_debug):
+        packages = []
+        source = repository.replace("-latest", "")
+
+        try:
+            os.makedirs(repository)
+        except OSError, e:
+            if e.errno == 17:
+                # Directory exists
+                pass
+
+        os.chdir(repository)
+
+        # Unlink everything
+        for _file in os.listdir("."):
+            os.unlink(_file)
+
+        index_file = os.path.join(source, "pisi-index.xml")
+        print "Parsing index file %s" % index_file
+        pisi_index = pisi.index.Index(index_file)
+
+        for package in pisi_index.packages:
+            if not os.path.exists(os.path.join(source,
+                                               package.packageURI)):
+                print "Warning: %s doesn't exist." % package.packageURI
+            else:
+                packages.append(package.packageURI)
+
+        # Symlink indexes
+        for index in glob.glob1(source, "pisi-index.xml*"):
+            os.symlink("../%s/%s" % (os.path.basename(source), index), index)
+
+        # and finally symlink the packages
+        for package in packages:
+            os.symlink("../%s/%s" % (os.path.basename(source), package), package)
+
+if __name__ == "__main__":
+    create_latest_repo_layout()

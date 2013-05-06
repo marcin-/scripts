@@ -1,0 +1,32 @@
+2013-05-05 Marcin Bojara <marcin_at_pisilinux.org>
+	New script buildfarm-add
+
+2010-04-01 Ozan Çağlayan <ozan_at_pardus.org.tr>
+	* (buildfarm/repomanager.py): Remove reverseDependencyUpdate checking as
+	maintainers *should* always write strict dependencies to the new library
+	for forcing a re-compile.
+
+2009-11-17  Ozan Çağlayan <ozan_at_pardus.org.tr>
+	* (data/buildfarm.conf): Add sandboxBlacklist option,
+	* (buildfarm/pisiinterface.py): Set ignore_sandbox for blacklisted
+	packages,
+	* (buildfarm/config.py): Handle booleans and comma separated lists in
+	config files,
+
+2009-11-10  Ozan Çağlayan <ozan_at_pardus.org.tr>
+	* (setup.py): Port to distutils,
+	* scripts/: Move standalone scripts under scripts/,
+	* TODO: Update TODO file,
+	* (buildfarm/utils.py): Use pisi.api.ctx.const class instead of hardcoding
+	constant values.
+	* (buildfarm/twit.py): Add new transparent Twitter class to send buildfarm
+	updates.
+	* (data/buildfarm.conf): Add INI style configuration file for buildfarm
+	which will be used instead of importing the config module.
+	* (buildfarm/*.py): Port config.py to ConfigParser()
+
+2009-11-09  Ozan Çağlayan <ozan_at_pardus.org.tr>
+	* ChangeLog: New file
+	* setup.py: Add setup.py and prepare for 2.0,
+	* examples/: Rename exampleRepo to examples and README,
+	* src/: Move all *.py files under src for a cleaner hierarchy.

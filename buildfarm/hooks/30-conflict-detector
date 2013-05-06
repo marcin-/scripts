@@ -1,0 +1,128 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Detects conflict between files shipped within pisi packages
+
+import os
+import sys
+import pisi
+import optparse
+
+mail_template = """\
+From: %(distribution)s %(release)s %(arch)s Buildfarm <%(mailFrom)s>
+To: %(mail_to)s
+Subject: [%(subjectID)s] Package Conflict Status
+Content-Type: text/plain;
+            charset="utf-8"
+
+Dear Pisi Linux contributors,
+
+You are probably receiving this e-mail because some of your packages ships
+files that conflicts with other packages. Below is the list of those packages
+along with the list of conflicting files:
+
+%(conflicts)s
+
+Please fix these conflicts as soon as possible to keep Pisi Linux repositories
+as consistent as possible.
+
+Thanks
+Pisi Linux Buildfarm 
+
+"""
+
+"""
+def send_mail(msg):
+    import smtplib
+    try:
+        session = smtplib.SMTP(smtp_server)
+    except:
+        print "*** Failed opening session on SMTP server %s. Aborting.."
+        return
+
+    try:
+        session.login(smtp_user, smtp_password)
+    except smtplib.SMTPAuthenticationError:
+        print "*** Authentication failed. Check your credentials."
+        return
+
+    #result = session.sendmail(mail_from, recipient, mail)
+
+    session.quit()
+"""
+
+def dump_results(conflicts, no_color=False, send_mail=False):
+    def colorize(msg, color, nocolor=False):
+        """Colorizes the given message."""
+        if nocolor:
+            return msg
+        else:
+            colors = {'green'   : '\x1b[32;01m%s\x1b[0m',
+                      'red'     : '\x1b[31;01m%s\x1b[0m',
+                      'yellow'  : '\x1b[33;01m%s\x1b[0m',
+                      'bold'    : '\x1b[1;01m%s\x1b[0m',
+                      'none'    : '\x1b[0m%s\x1b[0m',
+                     }
+            return colors[color if sys.stdout.isatty() else 'none'] % msg
+
+    # conflicts now contains conflicting files as key
+    # and conflicting packages as list elements
+
+    for packages, files in conflicts.items():
+        files.sort()
+        for package in packages.split(","):
+            print colorize(package, 'green', no_color)
+        print "-----------"
+        for _file in files:
+            print colorize(" * %s" % _file, 'red', no_color)
+        print
+
+
+if __name__ == "__main__":
+
+    parser = optparse.OptionParser(usage="Usage:  %prog [options]",
+                                   version="%prog 0.1",
+                                   prog="conflict-detector")
+
+    parser.add_option("-m", "--send-mail",
+                      action="store_true",
+                      dest="sendmail",
+                      default=False,
+                      help="Send an e-mail to the buildfarm list and the packagers")
+
+    parser.add_option("-n", "--no-color",
+                      action="store_true",
+                      dest="nocolor",
+                      default=False,
+                      help="Do not colorize output")
+
+
+    (options, arguments) = parser.parse_args()
+
+    files = {}
+    conflicts = {}
+    rconflicts = {}
+    installdb = pisi.db.installdb.InstallDB()
+
+    for package in sorted(installdb.list_installed()):
+        package_file_list = ['/%s' % _f.path for _f in \
+                installdb.get_files(package).list]
+        for f in package_file_list:
+            if not files.has_key(f):
+                files[f] = package
+            elif os.path.isfile(f):
+                value = [package, files[f]]
+                try:
+                    conflicts[f].extend(value)
+                except KeyError:
+                    conflicts[f] = value
+
+    # Convert conflicts into rconflicts
+    for k,v in conflicts.items():
+        key = ",".join(v)
+        try:
+            rconflicts[key].append(k)
+        except KeyError:
+            rconflicts[key] = [k]
+
+    dump_results(rconflicts, options.nocolor, options.sendmail)

@@ -1,67 +1,31 @@
 #!/usr/bin/python
+#
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2008, TUBITAK/UEKAE
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option)
+# any later version.
+#
+# Please read the COPYING file.
+#
 
-import os
 import sys
 import multiprocessing
+
+import urllib2
+import bz2
+import lzma
 
 import piksemel
 
 import pisi
 import pisi.dependency as dependency
-import pisi.pxml.xmlfile as xmlfile
-import pisi.pxml.autoxml as autoxml
-import pisi.component as component
-import pisi.specfile as specfile
-import pisi.metadata as metadata
-import pisi.group as group
 from pisi.graph import CycleException
 
-from buildfarm.config import configuration as conf
-from buildfarm.queuemanager import QueueManager as qm
-class Error(pisi.Error):
-    pass
 
-class Index(xmlfile.XmlFile):
-    __metaclass__ = autoxml.autoxml
-
-    tag = "PISI"
-
-    t_Distribution = [ component.Distribution, autoxml.optional ]
-    t_Specs = [ [specfile.SpecFile], autoxml.optional, "SpecFile"]
-    t_Packages = [ [metadata.Package], autoxml.optional, "Package"]
-    #t_Metadatas = [ [metadata.MetaData], autoxml.optional, "MetaData"]
-    t_Components = [ [component.Component], autoxml.optional, "Component"]
-    t_Groups = [ [group.Group], autoxml.optional, "Group"]
-
-    def index(self, specs):
-        print "Indexing ..."
-        pool = multiprocessing.Pool()
-
-        if specs:
-            try:
-                self.specs = pool.map(add_spec, specs)
-            except KeyboardInterrupt:
-                pool.terminate()
-                pool.join()
-                raise Exception
-
-        pool.close()
-        pool.join()
-
-def add_spec(path):
-    print "Adding %s" % path
-    try:
-        builder = pisi.operations.build.Builder(path)
-        builder.fetch_component()
-        sf = builder.spec
-        sf.source.sourceURI = os.path.realpath(path)
-        return sf
-
-    except KeyboardInterrupt:
-        raise Exception
-
-#------- http://svn.pardus.org.tr/uludag/trunk/scripts/circledep-finder used for this part of code 
 class SourceDB:
     def __init__(self, index):
 
@@ -91,6 +55,9 @@ class SourceDB:
         spec = pisi.specfile.SpecFile()
         spec.parse(src)
         return spec
+
+    def get_surce_uri(self, name):
+        return self.get_spec(name).source.sourceURI
 
     def list_specs(self):
         return self.__source_nodes.keys()
@@ -149,9 +116,9 @@ def find_circle(sourcedb, A):
             for builddep in src.buildDependencies:
                 process_dep(builddep)
 
-            for pkg in sf.packages:
-                for rtdep in pkg.packageDependencies:
-                    process_dep(rtdep)
+#            for pkg in sf.packages:
+#                for rtdep in pkg.packageDependencies:
+#                    process_dep(rtdep)
         B = Bp
 
         try:
@@ -161,6 +128,25 @@ def find_circle(sourcedb, A):
             return str(cycle)
 
     return ""
+
+def getIndex(uri):
+    try:
+        if "://" in uri:
+            rawdata = urllib2.urlopen(uri).read()
+        else:
+            rawdata = open(uri, "r").read()
+    except IOError:
+        print "could not fetch %s" % uri
+        return None
+
+    if uri.endswith("bz2"):
+        data = bz2.decompress(rawdata)
+    elif uri.endswith("xz") or uri.endswith("lzma"):
+        data = lzma.decompress(rawdata)
+    else:
+        data = rawdata
+
+    return data
 
 def processPackage(pkg, sourcesLength, counter):
     global sourcedb
@@ -173,44 +159,15 @@ def processPackage(pkg, sourcesLength, counter):
 def updateStatus(circleResult):
     global cycles
     cycles.add(circleResult)
-#------ end
 
-class QueueManager(qm):
-    def __init__(self):
-        self.workQueue = []
-        self.waitQueue = []
-
-        self.workQueueFileName = "workqueue"
-        self.waitQueueFileName = "waitqueue"
-
-        self.__deserialize(self.workQueue, self.workQueueFileName)
-        self.__deserialize(self.waitQueue, self.waitQueueFileName)
-
-        # Ignore empty lines
-        self.workQueue = list(set([s for s in self.workQueue if s]))
-        self.waitQueue = list(set([s for s in self.waitQueue if s]))
-
-    def get_queue(self):
-        return [pspec for pspec in set(self.waitQueue + self.workQueue)]
 
 if __name__ == "__main__":
-    
-    queue_manager = QueueManager()
-    queue = queue_manager.get_queue()
 
-    if len(queue) == 0:
-        logger.info("Work Queue is empty...")
+    if len(sys.argv) < 2:
+        print "Usage: circlefinder.py <source repo pisi-index.xml file>"
         sys.exit(1)
 
-    index = Index()
-    index.distribution = None
-    index.index(queue)
-    
-    indexfile = "%s/pisi-index.xml" % conf.workdir
-    index.write(indexfile, sha1sum=False, compress=None, sign=None)
-    print "Index file written to %s\n" % indexfile 
-
-    rawIndex = open(indexfile, "r").read()
+    rawIndex = getIndex(sys.argv[1])
     sourcedb = SourceDB(rawIndex)
     sources = sourcedb.list_specs()
 
@@ -235,3 +192,5 @@ if __name__ == "__main__":
             print cycle
     else:
         print "No circular dep found"
+
+

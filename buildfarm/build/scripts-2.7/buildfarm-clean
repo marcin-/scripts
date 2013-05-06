@@ -1,0 +1,16 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+
+from buildfarm.config import configuration as conf
+
+if __name__ == "__main__":
+
+    files = sys.argv[1:]
+    
+    for f in files:
+        path = "%s/%s" % (conf.workdir, f)
+        if os.path.isfile(path): open(path, "w")
+        else: print "Cannot find %s, skipping." % path

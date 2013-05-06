@@ -1,0 +1,160 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import shutil
+
+import pisi
+from buildfarm import utils
+
+def get_releases(repo_dir):
+    releases = {}
+    for root, dirs, files in os.walk(repo_dir):
+        for filename in files:
+            if filename.endswith(".delta.pisi"):
+                continue
+
+            if not filename.endswith(".pisi"):
+                continue
+
+            name, ver, rel, distro, arch = \
+                    pisi.util.split_package_filename(filename)
+
+            releases.setdefault(name, []).append(rel)
+
+    return releases
+
+def find_missing_delta_packages(testing_dir, stable_dir):
+    releases = get_releases(stable_dir)
+    testing_index = pisi.index.Index(os.path.join(testing_dir, "pisi-index.xml"))
+
+    missing_delta_packages = []
+    for package in testing_index.packages:
+        # Skip delta package if it's a new package or latest revision is not 
+        # merged yet (#18254)
+        if package.history[0].release not in releases.get(package.name, []):
+            continue
+
+        for delta_package in package.deltaPackages:
+            if delta_package.releaseFrom not in releases[package.name]:
+                continue
+
+            fn = delta_package.packageURI
+
+            if not os.path.exists(os.path.join(stable_dir, fn)):
+                missing_delta_packages.append(fn)
+
+    missing_delta_packages.sort()
+    return missing_delta_packages
+
+
+if __name__ == "__main__":
+    dry_run = True
+    input_file = None
+
+    args = sys.argv[1:]
+    while args:
+        param = args.pop(0)
+
+        if param == "--force":
+            dry_run = False
+        else:
+            input_file = param
+
+    if not input_file:
+        print "Usage: %s [--force] <input file>" % sys.argv[0]
+        sys.exit(0)
+
+    testing_dir = utils.get_compiled_packages_directory()
+    testing_debug_dir = utils.get_compiled_debug_packages_directory()
+    stable_dir = utils.get_stable_packages_directory()
+    stable_debug_dir = utils.get_stable_debug_packages_directory()
+
+    if not stable_dir:
+        print "You don't have a stable repository on this buildfarm."
+        sys.exit(1)
+
+    source_dir = utils.git_icin_yerel_konum()
+
+    def copy(src, dst):
+        print "Copying %s ..." % src
+        if not dry_run:
+            shutil.copy(src, dst)
+
+    def index(path):
+        cmd = "pisi index --skip-signing --skip-sources %s %s -o %s" % (source_dir, path, os.path.join(path, "pisi-index.xml"))
+
+        print cmd
+        if not dry_run:
+            os.system(cmd)
+
+
+    packages = []
+    with open(input_file) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            status, filename = line.split(None, 1)
+
+            package_file = os.path.join(testing_dir, filename)
+            if os.path.exists(package_file):
+                packages.append(package_file)
+            else:
+                print "ERROR: Cannot find '%s' in testing repository!" % filename
+                sys.exit(1)
+
+    for package_file in packages:
+        copy(package_file, stable_dir)
+    print
+
+    print "Looking for missing delta packages in stable repository..."
+    packages = find_missing_delta_packages(testing_dir, stable_dir)
+    print
+
+    print "Copying missing delta packages into %s" % stable_dir
+
+    for package_file in packages:
+        copy(os.path.join(testing_dir, package_file), stable_dir)
+    print
+
+    print "Creating index for stable repository..."
+    index(stable_dir)
+    print
+
+    print "Looking for missing debug packages..."
+    stable_index = pisi.index.Index(os.path.join(stable_dir, "pisi-index.xml"))
+
+    missing_debug_packages = []
+    for package in stable_index.packages:
+        parts = pisi.util.split_package_filename(package.packageURI)
+        parts = list(parts)
+        parts[0] += "-dbginfo"
+        fn = pisi.util.package_filename(*parts)
+        if not os.path.exists(os.path.join(stable_debug_dir, fn)) \
+                and os.path.exists(os.path.join(testing_debug_dir, fn)):
+            missing_debug_packages.append(fn)
+
+    missing_debug_packages.sort()
+    print
+
+    print "Copying missing debug packages into %s" % stable_debug_dir
+
+    for package_file in missing_debug_packages:
+        copy(os.path.join(testing_debug_dir, package_file), stable_debug_dir)
+    print
+
+    print "Looking for missing delta packages in stable debug repository..."
+    packages = find_missing_delta_packages(testing_debug_dir, stable_debug_dir)
+    print
+
+    print "Copying missing delta packages into %s" % stable_debug_dir
+
+    for package_file in packages:
+        copy(os.path.join(testing_debug_dir, package_file), stable_debug_dir)
+    print
+
+    print "Creating index for stable debug repository..."
+    index(stable_debug_dir)

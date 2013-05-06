@@ -1,0 +1,7 @@
+This directory provides the list of packages which are shipped with the ISO images.
+These lists are then used by buildfarm to generate delta packages.
+
+You can use the python script create-package-list.py to generate a cPickled dictionary.
+Simply give it the binary repository index file either in plain xml or bz2 compressed :
+
+$ create-package-list.py pisi-index.xml.bz2

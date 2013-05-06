@@ -1,0 +1,14 @@
+system/base/freetype/pspec.xml
+system/base/comar/pspec.xml
+system/base/attr/pspec.xml
+system/base/pisi/pspec.xml
+system/base/pypolkit/pspec.xml
+system/base/shadow/pspec.xml
+system/base/bootsplash/pspec.xml
+system/base/net-tools/pspec.xml
+system/base/iputils/pspec.xml
+system/base/readline/pspec.xml
+system/base/baselayout/pspec.xml
+system/base/python/pspec.xml
+system/base/comar-api/pspec.xml
+system/base/wireless-tools/pspec.xml
