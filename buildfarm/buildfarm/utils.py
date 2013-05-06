@@ -72,7 +72,7 @@ def create_directories():
                     conf.logdir,
                     get_compiled_packages_directory(),
                     get_compiled_debug_packages_directory(),
-                    git_icin_yerel_konum(),
+                    get_local_repository_url(),
                     get_package_log_directory(),
                   ]
 
@@ -91,17 +91,19 @@ def get_local_repository_url():
                         conf.release,
                         conf.subrepository)
 
-def git_icin_yerel_konum():
-    return conf.repositorydir
+def get_local_git_repository_url():
+    repo_name = conf.scmrepositoryurl.split("/").pop()[:-4]
+    if repo_name == conf.release: repo_name += "-git"  # to avoid it will the same dir as get_local_repository_url()
+    return os.path.join(conf.repositorydir,
+                        repo_name)
 
 def get_remote_repository_url():
-    return os.path.join(conf.scmrepositorybaseurl,
-                        conf.release,
-                        conf.subrepository)
-
-def git_icin_uzak_konum():
-    return conf.scmrepositorybaseurl
-
+    if conf.scm == "git":
+        return conf.scmrepositoryurl
+    else:
+        return os.path.join(conf.scmrepositorybaseurl,
+                            conf.release,
+                            conf.subrepository)
 
 def get_remote_tags_repository_index_url():
     if conf.basedeltarelease:
@@ -169,7 +171,7 @@ def get_package_name_from_path(pkg):
 def get_package_component_path(pkg):
     """Extracts system/base/gettext from full path."""
     return os.path.dirname(pkg).partition("%s/" % \
-            git_icin_yerel_konum())[-1]
+            get_local_repository_url())[-1]
 
 def delete_pisi_files_from(directory):
     """Deletes all .pisi files found in directory."""
@@ -195,7 +197,7 @@ def remove_obsoleted_packages():
     """Removes obsoleted packages from the system."""
     # Use directly distributions.xml to not rely on available
     # repositories on the system.
-    dist = pisi.component.Distribution("%sdistribution.xml" % git_icin_yerel_konum())
+    dist = pisi.component.Distribution("%sdistribution.xml" % get_local_repository_url())
     obsoletes = [obsolete.package for obsolete in dist.obsoletes]
 
     # Reduce the list so that already removed ones are excluded
@@ -274,7 +276,7 @@ def get_local_repo_pspecs():
                 elif l == "pspec.xml": res.append(newpath)
         return res
         
-    return sorted(isSpecFile(git_icin_yerel_konum()))
+    return sorted(isSpecFile(get_local_repository_url()))
 
 def get_path_repo_index():
     return "%s/pisi-repo-index.xml" % conf.workdir

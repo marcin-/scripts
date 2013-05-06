@@ -34,16 +34,19 @@ class RepositoryManager:
         self.same_release_updates = []
         self.excluded_arch_packages = []
 
-        print "\nUpdating repository %s" % (self.local_pspec_repo)
+        print "\nUpdating repository %s" % (utils.get_local_repository_url())
 
         if conf.scm == "svn":
             process = subprocess.Popen(["svn", "up", self.local_pspec_repo],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
         if conf.scm == "git":
-            process = subprocess.Popen(["git", "pull", self.local_pspec_repo+"/"+conf.name],
+            oldwd = os.getcwd()
+            os.chdir(self.local_pspec_repo+"/"+conf.name)
+            process = subprocess.Popen(["git", "pull"],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
+            os.chdir(oldwd)
         self.output = process.communicate()[0]
 
         if process.returncode != 0 and conf.scm == "svn":
@@ -51,6 +54,7 @@ class RepositoryManager:
             sys.exit(process.returncode)
         else:
             # List of lists
+            print self.output
             self.output = [line.split() for line in self.output.split("\n") if line]
 
     def get_changes(self, commit_type, search_for=""):
