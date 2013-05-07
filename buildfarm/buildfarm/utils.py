@@ -87,9 +87,13 @@ def get_distribution_release():
     return conf.release
 
 def get_local_repository_url():
-    return os.path.join(conf.repositorydir,
-                        conf.release,
-                        conf.subrepository)
+    if conf.subrepository:
+        return os.path.join(conf.repositorydir,
+                            conf.release,
+                            conf.subrepository)
+    else:
+        return os.path.join(conf.repositorydir,
+                            conf.release)
 
 def get_local_git_repository_url():
     repo_name = conf.scmrepositoryurl.split("/").pop()[:-4]
