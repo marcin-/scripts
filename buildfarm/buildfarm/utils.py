@@ -13,6 +13,7 @@
 # Various helper functions for pisi packages
 
 import os
+import sys
 import glob
 import subprocess
 
@@ -324,3 +325,23 @@ def filter_pspec_list(pspec_list):
             else:
                 missing_pkgs.add(pkg)    
     return sorted(list(missing_pkgs)) 
+
+def args_checker(args, options):
+    for arg in args:
+        if arg.startswith("-") and len(arg) > 2:
+            args[args.index(arg)] = arg[:2]
+            for o in arg[2:]: args.append("-%s" % o)
+
+    for o in options:
+        if "-%s" %o in args:
+            options[o] = True
+            args.remove("-%s" %o)
+
+    unknown_options = ""
+    for arg in args:
+        if arg.startswith("-"): unknown_options += " %s" % arg
+    if unknown_options:
+        sys.stderr.write("Unrecognized option%s:%s\n" % (("s" * (len(unknown_options.split()) - 1))[:1], unknown_options))
+        sys.exit(1)
+
+    return args, options

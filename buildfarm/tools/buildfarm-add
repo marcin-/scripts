@@ -90,36 +90,19 @@ class UpdatesManager:
 
 if __name__ == "__main__":
 
-    args = sys.argv[1:]
-    queue = []
-    options = {"-r": False,     # reset queues
-               "-w": False,     # write to work queue
-               "-n": False,     # add new packages
-               "-u": False,     # add updated packages
-               "-c": False,     # add components to work queue
-               "-p": False,     # add packages to work queue
-               "-i": False,     # don't add build dependencies 
-               "-x": False,     # update local repo index
-               "-s": False      # skip already compiled packages
+    options = {"r": False,     # reset queues
+               "w": False,     # write to work queue
+               "n": False,     # add new packages
+               "u": False,     # add updated packages
+               "c": False,     # add components to work queue
+               "p": False,     # add packages to work queue
+               "i": False,     # don't add build dependencies 
+               "x": False,     # update local repo index
+               "s": False      # skip already compiled packages
                }
+    args, options = utils.args_checker(sys.argv[1:], options)
     
-    for arg in args:
-        if arg.startswith("-") and len(arg) > 2:
-            args[args.index(arg)] = arg[:2]
-            for o in arg[2:]: args.append("-%s" % o)
-
-    for o in options:
-        if o in args:
-            options[o] = True
-            args.remove(o)
-
-    unknown_options = ""
-    for arg in args:
-        if arg.startswith("-"): unknown_options += " %s" % arg
-    if unknown_options:
-        sys.stderr.write("Unrecognized option(s):%s\n" % unknown_options)
-        sys.exit(1)
-        
+    queue = []
 
     if options["-c"] and options["-p"]:
         print "You have to use -c and -p options separately!"
