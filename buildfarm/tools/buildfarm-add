@@ -148,7 +148,7 @@ if __name__ == "__main__":
     if options["-c"]:
         found_components = []
     
-        component_list = os.popen("find %s -name 'component.xml'" % utils.git_icin_yerel_konum()).read().strip().split("\n")
+        component_list = os.popen("find %s -name 'component.xml'" % utils.get_local_repository_url()).read().strip().split("\n")
         for c in component_list:
             try:
                 component = pisi.component.Component(c)

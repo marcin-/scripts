@@ -70,7 +70,7 @@ class QueueManager:
                         continue
 
                     if component:
-                        path = "%s/%s/%s/pspec.xml" % (utils.git_icin_yerel_konum(), component.replace(".", "/"), line)
+                        path = "%s/%s/%s/pspec.xml" % (utils.get_local_repository_url(), component.replace(".", "/"), line)
 
                         if os.path.exists(path):
                             queueName.append(path)

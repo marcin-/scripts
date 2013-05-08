@@ -23,7 +23,7 @@ class DependencyResolver:
     def __init__(self, pspeclist):
 
         self.oldwd = os.getcwd()
-        os.chdir(utils.git_icin_yerel_konum())
+        os.chdir(utils.get_local_repository_url())
 
         # Work queue and wait queue may contain same pspecs.
         # be sure that every pspec is unique in the pspeclist.

@@ -46,7 +46,7 @@ def send(msg, pspec = "", _type = "", subject=""):
     package_name = ""
     last_log = []
     if pspec:
-        spec = pisi.specfile.SpecFile(os.path.join(utils.git_icin_yerel_konum(), pspec))
+        spec = pisi.specfile.SpecFile(os.path.join(utils.get_local_repository_url(), pspec))
         recipients_name.append(spec.source.packager.name)
         recipients_email.append(spec.source.packager.email)
 

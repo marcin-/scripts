@@ -75,7 +75,7 @@ if __name__ == "__main__":
         print "You don't have a stable repository on this buildfarm."
         sys.exit(1)
 
-    source_dir = utils.git_icin_yerel_konum()
+    source_dir = utils.get_local_repository_url()
 
     def copy(src, dst):
         print "Copying %s ..." % src

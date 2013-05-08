@@ -130,7 +130,7 @@ def build_packages():
         paths.append(utils.get_compiled_debug_packages_directory())
 
     for directory in paths:
-        pisi.api.index([utils.git_icin_yerel_konum(), directory],
+        pisi.api.index([utils.get_local_repository_url(), directory],
                        output=os.path.join(directory, "pisi-index.xml"),
                        skip_sources=True,
                        skip_signing=True,

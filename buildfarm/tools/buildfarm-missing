@@ -12,7 +12,7 @@ from buildfarm import utils
 
 if __name__ == "__main__":
 
-    source_repo = utils.git_icin_yerel_konum()
+    source_repo = utils.get_local_repository_url()
     binary_dir = utils.get_compiled_packages_directory()
 
     missing_pkgs = set()
