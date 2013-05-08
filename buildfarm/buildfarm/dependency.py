@@ -20,7 +20,9 @@ from buildfarm import logger
 from buildfarm.config import configuration as conf
 
 class DependencyResolver:
-    def __init__(self, pspeclist):
+    def __init__(self, pspeclist, rdresolv = True):
+
+        self.resolvrdeps = rdresolv
 
         self.oldwd = os.getcwd()
         os.chdir(utils.get_local_repository_url())
@@ -46,9 +48,12 @@ class DependencyResolver:
         return self.bdepmap[src]
 
     def resolvDeps(self):
-        while not (self.buildDepResolver() and self.runtimeDepResolver()):
-        #while not self.buildDepResolver():
-            pass
+        if self.resolvrdeps:
+            while not (self.buildDepResolver() and self.runtimeDepResolver()):
+                pass
+        else: 
+            while not self.buildDepResolver():
+                pass
 
         #os.chdir(self.oldwd)
         return self.pspeclist

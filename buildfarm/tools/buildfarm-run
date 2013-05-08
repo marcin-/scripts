@@ -81,7 +81,7 @@ def build_packages():
             new_delta_packages = pisi_api.get_delta_package_map()
 
             # Build was successful, let's install the packages
-            pisi_api.install(new_binary_packages)
+            pisi_api.install(new_binary_packages, ignore_dep=options["b"])
 
         except Exception, e:
             # Finalize api to generate logs
@@ -185,6 +185,10 @@ def handle_exception(exception, value, trace_back):
     logger.error(string_io.read())
 
 if __name__ == "__main__":
+    options = {"b": False     # resolv build deps only
+               }
+    args, options = utils.args_checker(sys.argv[1:], options)
+
     sys.excepthook = handle_exception
 
     # Check for available disk space, fail if any

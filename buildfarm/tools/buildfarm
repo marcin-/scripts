@@ -7,7 +7,6 @@ import subprocess
 COMMANDS_NOPARAM = {
                            "init": "Initializes a new buildfarm environment",
                            "up": "Checks out the repository from remote SCM",
-                           "run": "Build and install packages",
                            "missing": "Dumps the packages which has releases not built yet",
                            "circle": "Checks circle dependencies",
                            "--version": "Prints the version\n"
@@ -15,6 +14,7 @@ COMMANDS_NOPARAM = {
 
 COMMANDS_WITH_PARAMS = {
                            "add": "Adds components or packages to work queue",
+                           "run": "Build and install packages",
                            "clean": "cleans specified waitqueue and/or workqueue files"
                         }
 
