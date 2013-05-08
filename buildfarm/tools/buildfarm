@@ -13,15 +13,36 @@ COMMANDS_NOPARAM = {
                    }
 
 COMMANDS_WITH_PARAMS = {
-                           "add": "Adds components or packages to work queue",
-                           "run": "Build and install packages",
+                           "add": "Adds components or packages to work queue#",
+                           "run": "Build and install packages#",
                            "clean": "cleans specified waitqueue and/or workqueue files"
                         }
+
+ADD = {
+                "-r": "reset queues", 
+                "-w": "write to work queue",
+                "-n": "add new packages",
+                "-u": "add updated packages",
+                "-c": "add components to work queue", 
+                "-p": "add packages to work queue",
+                "-i": "don't add build dependencies", 
+                "-x": "update local repo index",
+                "-s": "skip already compiled packages"
+       }
+
+RUN = {
+                "-b": "resolv build deps only"
+       }
 
 def print_help (commands):
     longest_name = len(max(commands, key=len))        
     for cmd in sorted(commands, key=lambda x: x[0]):
-        print "    %s%s - %s" % (" " * (longest_name - len(cmd)), cmd, commands[cmd])
+        if commands[cmd].endswith('#'): 
+            print "    %s%s - %s" % (" " * (longest_name - len(cmd)), cmd, commands[cmd][:-1])
+            print "       %sOptions:" % (" " * longest_name)
+            for opt in sorted(eval(cmd.upper()), key=lambda x: x[1]):
+                 print "       %s%s %s" % ((" " * longest_name), opt, eval(cmd.upper())[opt])
+        else: print "    %s%s - %s" % (" " * (longest_name - len(cmd)), cmd, commands[cmd])
 
 def usage():
     print """\
