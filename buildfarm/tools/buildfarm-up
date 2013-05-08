@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # git repository will be managed in buildfarm-add
     if conf.scm == "git":
         print "That's all for SCM=git" 
-        return
+        sys.exit(0)
 
     # Print current workqueue/waitqueue
     repository_manager.queue_manager.dump_work_queue()
