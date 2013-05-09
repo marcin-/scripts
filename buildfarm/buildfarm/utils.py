@@ -345,3 +345,12 @@ def args_checker(args, options):
         sys.exit(1)
 
     return args, options
+
+def index_workqueue():
+    print "Indexing work queue ..."
+    index = Index()
+    index.distribution = None
+    index.index(queue)    
+    indexfile = get_path_work_index()
+    index.write(indexfile, sha1sum=False, compress=None, sign=None)
+    print "Index file for work queue written to %s\n" % indexfile

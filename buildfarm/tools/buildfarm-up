@@ -12,6 +12,8 @@
 
 import os
 import sys
+import time
+import shutil
 import subprocess
 
 import pisi
@@ -20,11 +22,117 @@ from buildfarm import utils
 from buildfarm import queuemanager
 from buildfarm.config import configuration as conf
 
+class UpdatesManager:
+    def __init__(self):
+        self.local_url  = utils.get_local_repository_url()      # local work repo
+        self.local_git  = utils.get_local_git_repository_url()  # local git copy 
+
+        self.final_queue = []
+
+        self.new = []
+        self.removed = []
+        self.updated = []
+
+        self.__check_diffs()
+        
+        if self.removed: self.__delete_files()
+        if self.new:
+            self.__copy_files("self.new")
+            self.final_queue.extend(self.get_new_packages())
+        if self.updated:
+            self.__copy_files("self.updated")
+            self.final_queue.extend(self.get_updated_packages())
+
+        if self.removed or self.new or self.updated: utils.update_local_repo_index()
+
+    def __check_diffs(self):
+        src = {}
+        dst = {}
+        len_git_path = len(self.local_git)
+        len_url_path = len(self.local_url)
+
+        for root, dirs, files in os.walk(self.local_git):
+            if root.startswith(os.path.join(self.local_git, ".git")): continue
+            for f in files:
+                src[os.path.join(root[len_git_path + 1:], f)] = time.ctime(os.path.getmtime(os.path.join(root, f)))
+        if ".gitignore" in src: del src[".gitignore"]
+        for root, dirs, files in os.walk(self.local_url):
+            for f in files:
+                dst[os.path.join(root[len_url_path + 1:], f)] = time.ctime(os.path.getmtime(os.path.join(root, f)))
+         
+        for f in src:
+            try:
+                if not src[f] == dst[f]: self.updated.append(f)
+                del dst[f]
+            except KeyError:
+                self.new.append(f)
+        for f in self.new: del src[f]
+
+        self.removed.extend(sorted(dst.keys()))
+    
+    def __delete_files(self):
+        dirs = []
+        for f in self.removed:
+            print "Removing file: %s" % os.path.join(self.local_url, f)
+            os.remove(os.path.join(self.local_url, f))
+            if not os.path.dirname(f) in dirs: dirs.append(os.path.dirname(os.path.join(self.local_url, f)))
+        self.__delete_dirs(dirs)
+    
+    def __delete_dirs(self, paths):
+        for path in paths:
+            if os.path.isdir(path) and not os.listdir(path):
+                print "Removing empty dir: %s" % path
+                os.rmdir(path)
+
+    def __copy_files(self, source):
+        for f in sorted(eval(source)):
+            if not os.path.isdir(os.path.dirname(os.path.join(self.local_url, f))):
+                os.makedirs(os.path.dirname(os.path.join(self.local_url, f)))
+            print "Copying file: %s to %s" % (f, self.local_url)
+            shutil.copy2(os.path.join(self.local_git, f), os.path.join(self.local_url, f))
+       
+    def get_new_packages(self):
+        return [os.path.join(self.local_url, f) for f in self.new if f.endswith("/pspec.xml")]
+
+    def get_updated_packages(self):
+        return [os.path.join(self.local_url, f) for f in self.updated if f.endswith("/pspec.xml")]
+    
+    def manage(self):
+        print "Appending %s/waitqueue" % conf.workdir
+        with open("%s/waitqueue" % conf.workdir) as f:
+            self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
+        print "Appending %s/workqueue" % conf.workdir
+        with open("%s/workqueue" % conf.workdir) as f:
+            self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
+
+        for pspec in self.final_queue[:]:
+            spec = pisi.specfile.SpecFile(pspec)
+
+            # First the release check
+            expected_pisi_file = os.path.join(utils.get_compiled_packages_directory(), \
+                    utils.get_expected_file_name(spec))
+            print expected_pisi_file
+            if os.path.exists(expected_pisi_file):
+                print expected_pisi_file
+                self.final_queue.remove(pspec)
+                #self.same_release_updates.append(pspec)
+                continue
+
+            # Now the architecture check
+            if utils.is_arch_excluded(spec):
+                self.final_queue.remove(pspec)
+                self.excluded_arch_packages.append(pspec)
+
+        print "Writing %s/workqueue" % conf.workdir
+        open("%s/workqueue" % conf.workdir, "w").write("\n".join(self.final_queue))
+        utils.clean_waitqueue()
+
+#        utils.index_workqueue()
+
 class RepositoryManager:
     def __init__(self):
         self.local_pspec_repo = utils.get_local_repository_url()
         self.queue_manager = queuemanager.QueueManager()
-        self.queue_manager.transfer_all_packages_to_work_queue()
 
         self.output = []
 
@@ -122,13 +230,13 @@ class RepositoryManager:
 
 if __name__ == "__main__":
 
+    if conf.scm == "git":
+        um = UpdatesManager()
+        um.manage()
+        sys.exit(0)
+
     # Create RepositoryManager
     repository_manager = RepositoryManager()
-
-    # git repository will be managed in buildfarm-add
-    if conf.scm == "git":
-        print "That's all for SCM=git" 
-        sys.exit(0)
 
     # Print current workqueue/waitqueue
     repository_manager.queue_manager.dump_work_queue()

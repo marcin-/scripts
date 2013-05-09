@@ -21,8 +21,6 @@ COMMANDS_WITH_PARAMS = {
 ADD = {
                 "-r": "reset queues", 
                 "-w": "write to work queue",
-                "-n": "add new packages",
-                "-u": "add updated packages",
                 "-c": "add components to work queue", 
                 "-p": "add packages to work queue",
                 "-i": "don't add build dependencies", 

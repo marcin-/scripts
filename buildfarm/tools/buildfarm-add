@@ -6,94 +6,17 @@ os.environ["LC_ALL"] = "C"
 
 import sys
 import pisi
-import time
-import shutil
 
 from buildfarm.config import configuration as conf
 from buildfarm import utils
 from buildfarm.circledepfinder import SourceDB
-import buildfarm.queuemanager as qm
 
 from buildfarm.dependency import DependencyResolver
-
-class UpdatesManager:
-    def __init__(self):
-        self.new_packages, self.updated_packages = [], []
-
-        self.new = []
-        self.removed = []
-        self.updated = []
-
-        self.local_url  = utils.get_local_repository_url()      # local work repo
-        self.local_git  = utils.get_local_git_repository_url()  # local git copy
-        self.__check_diffs()
-        
-        if self.removed:
-            self.__delete_files()
-            utils.update_local_repo_index()
-
-    def __check_diffs(self):
-        src = {}
-        dst = {}
-        len_git_path = len(self.local_git)
-        len_url_path = len(self.local_url)
-
-        for root, dirs, files in os.walk(self.local_git):
-            if root.startswith(os.path.join(self.local_git, ".git")): continue
-            for f in files:
-                src[os.path.join(root[len_git_path + 1:], f)] = time.ctime(os.path.getmtime(os.path.join(root, f)))
-        if ".gitignore" in src: del src[".gitignore"]
-        for root, dirs, files in os.walk(self.local_url):
-            for f in files:
-                dst[os.path.join(root[len_url_path + 1:], f)] = time.ctime(os.path.getmtime(os.path.join(root, f)))
-         
-        for f in src:
-            try:
-                if not src[f] == dst[f]: self.updated.append(f)
-                del dst[f]
-            except KeyError:
-                self.new.append(f)
-        for f in self.new: del src[f]
-
-        self.removed.extend(sorted(dst.keys()))
-    
-    def __delete_files(self):
-        dirs = []
-        for f in self.removed:
-            print "Removing file: %s" % os.path.join(self.local_url, f)
-            os.remove(os.path.join(self.local_url, f))
-            if not os.path.dirname(f) in dirs: dirs.append(os.path.dirname(os.path.join(self.local_url, f)))
-        self.__delete_dirs(dirs)
-    
-    def __delete_dirs(self, paths):
-        for path in paths:
-            if os.path.isdir(path) and not os.listdir(path):
-                print "Removing empty dir: %s" % path
-                os.rmdir(path)
-
-    def __copy_files(self, source):
-        for f in sorted(eval(source)):
-            if not os.path.isdir(os.path.dirname(os.path.join(self.local_url, f))):
-                os.makedirs(os.path.dirname(os.path.join(self.local_url, f)))
-            print "Copying file: %s to %s" % (f, self.local_url)
-            shutil.copy2(os.path.join(self.local_git, f), os.path.join(self.local_url, f))
-       
-    def get_new_packages(self):
-        self.__copy_files("self.new")
-        utils.update_local_repo_index()
-        return [os.path.join(self.local_url, f) for f in self.new if f.endswith("/pspec.xml")]
-
-    def get_updated_packages(self):
-        self.__copy_files("self.updated")
-        utils.update_local_repo_index()
-        return [os.path.join(self.local_url, f) for f in self.updated if f.endswith("/pspec.xml")]
 
 if __name__ == "__main__":
 
     options = {"r": False,     # reset queues
                "w": False,     # write to work queue
-               "n": False,     # add new packages
-               "u": False,     # add updated packages
                "c": False,     # add components to work queue
                "p": False,     # add packages to work queue
                "i": False,     # don't add build dependencies 
@@ -114,11 +37,7 @@ if __name__ == "__main__":
         utils.clean_waitqueue()
         utils.clean_workqueue()
 
-    if options["-n"] or options["-u"]:
-        um = UpdatesManager()
-        if options["-n"]: queue += um.get_new_packages()
-        if options["-u"]: queue += um.get_updated_packages()
-    elif options["-x"] or not os.path.isfile(utils.get_path_repo_index()):
+    if options["-x"] or not os.path.isfile(utils.get_path_repo_index()):
         utils.update_local_repo_index()
 #        all_pspecs = utils.update_local_repo_index(get_list = True)
 #    else:
@@ -213,10 +132,4 @@ if __name__ == "__main__":
         open("%s/workqueue" % conf.workdir, "w").write("\n".join(queue))
         utils.clean_waitqueue()
 
-        print "Indexing work queue ..."
-        index = utils.Index()
-        index.distribution = None
-        index.index(queue)    
-        indexfile = utils.get_path_work_index()
-        index.write(indexfile, sha1sum=False, compress=None, sign=None)
-        print "Index file for work queue written to %s\n" % indexfile
+        utils.index_workqueue()
