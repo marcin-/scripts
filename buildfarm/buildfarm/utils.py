@@ -346,7 +346,7 @@ def args_checker(args, options):
 
     return args, options
 
-def index_workqueue():
+def index_workqueue(queue):
     print "Indexing work queue ..."
     index = Index()
     index.distribution = None

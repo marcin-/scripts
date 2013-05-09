@@ -27,17 +27,14 @@ if __name__ == "__main__":
     
     queue = []
 
-    if options["-c"] and options["-p"]:
+    if options["c"] and options["p"]:
         print "You have to use -c and -p options separately!"
         sys.exit(1)
-    elif (options["-c"] or options["-p"]) and (options["-n"] or options["-u"]):
-        print "You cannot use -c or -p options with -n or -n!"
-        sys.exit(1)
-    elif options["-r"]:
+    elif options["r"]:
         utils.clean_waitqueue()
         utils.clean_workqueue()
 
-    if options["-x"] or not os.path.isfile(utils.get_path_repo_index()):
+    if options["x"] or not os.path.isfile(utils.get_path_repo_index()):
         utils.update_local_repo_index()
 #        all_pspecs = utils.update_local_repo_index(get_list = True)
 #    else:
@@ -47,7 +44,7 @@ if __name__ == "__main__":
     sourcedb = SourceDB(rawIndex)
     sources = sourcedb.list_specs()
 
-    if options["-c"]:
+    if options["c"]:
         found_components = []
     
         component_list = os.popen("find %s -name 'component.xml'" % utils.get_local_repository_url()).read().strip().split("\n")
@@ -71,7 +68,7 @@ if __name__ == "__main__":
         for d in found_components:
             queue += os.popen("find %s -name 'pspec.xml'" % d).read().strip().split("\n")
 
-    elif options["-p"]:
+    elif options["p"]:
         for arg in args:
             source_uri = ""
             if sourcedb.has_spec(arg):
@@ -89,7 +86,7 @@ if __name__ == "__main__":
         print "Empty queue nothing to add. Exit."
         sys.exit(0)
 
-    if not options["-r"]:
+    if not options["r"]:
         print "Appending %s/waitqueue" % conf.workdir
         with open("%s/waitqueue" % conf.workdir) as f:
             queue += [pspec for pspec in f.read().splitlines() if not pspec in queue]
@@ -101,7 +98,7 @@ if __name__ == "__main__":
     sys.stderr.write("\n- ".join(queue))
     sys.stderr.write("\n")
 
-    if not options["-i"]:
+    if not options["i"]:
         missing_paths = True
         while missing_paths:    
             dr_work = DependencyResolver(queue)   
@@ -122,9 +119,9 @@ if __name__ == "__main__":
                 sys.stderr.write("\n")
                 queue.extend(missing_paths)
 
-    if options["-s"]: queue = utils.filter_pspec_list(queue)
+    if options["s"]: queue = utils.filter_pspec_list(queue)
 
-    if not options["-w"]:
+    if not options["w"]:
         print("\n".join(queue))
         sys.exit(0)
     else:
@@ -132,4 +129,4 @@ if __name__ == "__main__":
         open("%s/workqueue" % conf.workdir, "w").write("\n".join(queue))
         utils.clean_waitqueue()
 
-        utils.index_workqueue()
+        utils.index_workqueue(queue)

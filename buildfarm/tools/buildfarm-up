@@ -127,7 +127,7 @@ class UpdatesManager:
         open("%s/workqueue" % conf.workdir, "w").write("\n".join(self.final_queue))
         utils.clean_waitqueue()
 
-#        utils.index_workqueue()
+        utils.index_workqueue(self.final_queue)
 
 class RepositoryManager:
     def __init__(self):
