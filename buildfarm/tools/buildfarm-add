@@ -26,6 +26,7 @@ if __name__ == "__main__":
     args, options = utils.args_checker(sys.argv[1:], options)
     
     queue = []
+    args_queue = []
 
     if options["c"] and options["p"]:
         print "You have to use -c and -p options separately!"
@@ -81,6 +82,7 @@ if __name__ == "__main__":
                 else:
                     source_uri = sourcedb.get_surce_uri(pkg)
             if source_uri and not source_uri in queue: queue.append(source_uri)
+        args_queue = queue[:]
 
     if not queue:
         print "Empty queue nothing to add. Exit."
@@ -119,7 +121,7 @@ if __name__ == "__main__":
                 sys.stderr.write("\n")
                 queue.extend(missing_paths)
 
-    if options["s"]: queue = utils.filter_pspec_list(queue)
+    if options["s"]: queue = utils.filter_pspec_list(queue, exclude = args_queue)
 
     if not options["w"]:
         print("\n".join(queue))

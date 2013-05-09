@@ -301,7 +301,7 @@ def update_local_repo_index(get_list = False):
  
     if get_list: return pspeclist
  
-def filter_pspec_list(pspec_list):
+def filter_pspec_list(pspec_list, exclude = []):
     binary_dir = get_compiled_packages_directory()
     missing_pkgs = set()
 
@@ -312,6 +312,9 @@ def filter_pspec_list(pspec_list):
             sys.stderr.write("%s\n" % e)
         else:
             if conf.architecture in spec.source.excludeArch:
+                continue
+            elif pkg in exclude:
+                missing_pkgs.add(pkg)
                 continue
 
             ver = spec.history[0].version
