@@ -20,7 +20,9 @@ from buildfarm.config import configuration as conf
 from pisi.db.installdb import InstallDB
 
 class QueueManager:
-    def __init__(self, resolv = True):
+    def __init__(self, rdresolv = True, resolv = True):
+        self.rdresolv = rdresolv
+
         self.workQueue = []
         self.waitQueue = []
 
@@ -36,8 +38,8 @@ class QueueManager:
 
         if not resolv: return
 
-        self.waitQueue = dependency.DependencyResolver(self.waitQueue).resolvDeps()
-        self.workQueue = dependency.DependencyResolver(self.workQueue).resolvDeps()
+        self.waitQueue = dependency.DependencyResolver(self.waitQueue, self.rdresolv).resolvDeps()
+        self.workQueue = dependency.DependencyResolver(self.workQueue, self.rdresolv).resolvDeps()
 
     def __del__(self):
         self.__serialize(self.waitQueue, self.waitQueueFileName)
@@ -136,7 +138,7 @@ class QueueManager:
 
     def transfer_all_packages_to_work_queue(self):
         self.workQueue = list(set(self.workQueue + self.waitQueue))
-        self.workQueue = dependency.DependencyResolver(self.workQueue).resolvDeps()
+        self.workQueue = dependency.DependencyResolver(self.workQueue, self.rdresolv).resolvDeps()
         self.waitQueue = []
 
     def transferToWaitQueue(self, pspec):

@@ -27,7 +27,7 @@ from buildfarm import logger, mailer, queuemanager, pisiinterface, utils
 from buildfarm.config import configuration as conf
 
 def build_packages():
-    qmgr = queuemanager.QueueManager()
+    qmgr = queuemanager.QueueManager(rdresolv = not options["b"])
 
     qmgr.transfer_all_packages_to_work_queue()
     queue = copy.copy(qmgr.get_work_queue())

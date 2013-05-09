@@ -51,7 +51,7 @@ class DependencyResolver:
         if self.resolvrdeps:
             while not (self.buildDepResolver() and self.runtimeDepResolver()):
                 pass
-        else: 
+        else:
             while not self.buildDepResolver():
                 pass
 
@@ -122,6 +122,7 @@ class DependencyResolver:
                     if p in self.namemap.get(self.pspeclist[j]):
                         self.pspeclist.insert(j+1, self.pspeclist.pop(i))
                         clean = False
+        #if not clean: print "runtime deps not resolved"
         return clean
 
 
@@ -138,6 +139,8 @@ class DependencyResolver:
                     # in its packages
                     if p in self.namemap.get(self.pspeclist[j]):
                         # namemap brings package list of a package
+                        #print self.pspeclist[i].split('/')[-2], self.pspeclist[j].split('/')[-2]
                         self.pspeclist.insert(j+1, self.pspeclist.pop(i))
                         clean = False
+                        #print "build deps not resolved"
         return clean
