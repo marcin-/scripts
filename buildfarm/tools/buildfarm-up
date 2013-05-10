@@ -113,7 +113,6 @@ class UpdatesManager:
                     utils.get_expected_file_name(spec))
             print expected_pisi_file
             if os.path.exists(expected_pisi_file):
-                print expected_pisi_file
                 self.final_queue.remove(pspec)
                 #self.same_release_updates.append(pspec)
                 continue
