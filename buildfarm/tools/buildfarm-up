@@ -111,7 +111,7 @@ class UpdatesManager:
             # First the release check
             expected_pisi_file = os.path.join(utils.get_compiled_packages_directory(), \
                     utils.get_expected_file_name(spec))
-            print expected_pisi_file
+            #print expected_pisi_file
             if os.path.exists(expected_pisi_file):
                 self.final_queue.remove(pspec)
                 #self.same_release_updates.append(pspec)
@@ -230,6 +230,17 @@ class RepositoryManager:
 if __name__ == "__main__":
 
     if conf.scm == "git":
+        print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
+        oldwd = os.getcwd()
+        os.chdir(utils.get_local_git_repository_url())
+        process = subprocess.Popen(["git", "pull"],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        print process.communicate()[0]
+        if process.returncode != 0:
+            print "A problem with GIT occurred while updating repository, exiting."
+            sys.exit(process.returncode)
+        os.chdir(oldwd)
         um = UpdatesManager()
         um.manage()
         sys.exit(0)
