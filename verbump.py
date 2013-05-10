@@ -82,7 +82,7 @@ def bump(options, path):
             sys.exit(1)
         new_archive = options.uri
         new_version = re.sub(ver_ext_pattern, "\\1", new_archive)
-        new_type = re.sub(ver_ext_pattern, "\\2", new_archive).replace(".", "")
+        new_type = re.sub(ver_ext_pattern, "\\2", new_archive).replace(".", "").replace("tgz", "targz")
     elif options.ver:
         if not re.search("[\d\.]", options.ver):
             print "Wrong version number: %s" % options.ver
