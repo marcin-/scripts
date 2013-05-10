@@ -56,11 +56,20 @@ class SourceDB:
         spec.parse(src)
         return spec
 
-    def get_surce_uri(self, name):
+    def get_source_uri(self, name):
         return self.get_spec(name).source.sourceURI
 
     def list_specs(self):
         return self.__source_nodes.keys()
+
+    def get_source_uri_dict(self):
+        return dict([(s, self.get_source_uri(s)) for s in self.__source_nodes.keys()])
+
+    def get_uri_source_dict(self):
+        return dict([(self.get_source_uri(s), s) for s in self.__source_nodes.keys()])
+    
+    def get_buid_dependencies(self, name):
+        return self.get_spec(name).source.buildDependencies
 
     def pkgtosrc(self, name):
         return self.__pkgstosrc[name]

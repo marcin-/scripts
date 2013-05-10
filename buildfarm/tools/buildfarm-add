@@ -15,12 +15,12 @@ from buildfarm.dependency import DependencyResolver
 
 if __name__ == "__main__":
 
-    options = {"r": False,     # reset queues
-               "w": False,     # write to work queue
-               "c": False,     # add components to work queue
-               "p": False,     # add packages to work queue
-               "i": False,     # don't add build dependencies 
-               "x": False,     # update local repo index
+    options = {"r": False,      # reset queues
+               "w": False,      # write to work queue
+               "c": False,      # add components to work queue
+               "p": False,      # add packages to work queue
+               "i": False,      # don't add build dependencies 
+               "x": False,      # update local repo index
                "s": False      # skip already compiled packages
                }
     args, options = utils.args_checker(sys.argv[1:], options)
@@ -73,14 +73,14 @@ if __name__ == "__main__":
         for arg in args:
             source_uri = ""
             if sourcedb.has_spec(arg):
-                source_uri = sourcedb.get_surce_uri(arg)
+                source_uri = sourcedb.get_source_uri(arg)
             else:
                 try:
                     pkg = sourcedb.pkgtosrc(arg)
                 except KeyError:
                     pass
                 else:
-                    source_uri = sourcedb.get_surce_uri(pkg)
+                    source_uri = sourcedb.get_source_uri(pkg)
             if source_uri and not source_uri in queue: queue.append(source_uri)
         args_queue = queue[:]
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                     for bd in  sourcedb.get_spec(src_name).source.buildDependencies:
                         dep_src_name = str(sourcedb.pkgtosrc(str(bd).split()[0]))   # split()[0] -> 'tcl-devel version >= 8.6.0'
                         if sourcedb.has_spec(dep_src_name):
-                            source_uri = sourcedb.get_surce_uri(dep_src_name)
+                            source_uri = sourcedb.get_source_uri(dep_src_name)
                             if not source_uri in queue and not source_uri in missing_paths: missing_paths.append(source_uri)
     
             if missing_paths:
