@@ -45,7 +45,6 @@ def build_packages():
 
     # Use a/b/pspec.xml instead of full path in e-mails
     stripped_work_queue = [utils.get_package_component_path(pkg) for pkg in queue]
-    print stripped_work_queue
 
     logger.raw("QUEUE")
     logger.info("Starting to compile the following packages:%s" % stripped_work_queue)

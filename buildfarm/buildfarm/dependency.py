@@ -41,6 +41,10 @@ class DependencyResolver:
                         self.bdepmap[pspec] += self.__getBuildDependencies(path)
                     except KeyError:
                         self.bdepmap[pspec] = self.__getBuildDependencies(path)
+                self.bdepmap[pspec] = list(set(self.bdepmap[pspec]))
+                for path in pspec.split():
+                    for pkg in self.__getPackageNames(path):
+                        if pkg in self.bdepmap[pspec]: self.bdepmap[pspec].remove(pkg)
         for pspec in self.pspeclist:
             if len(pspec.split()) == 1: self.rdepmap[pspec] = self.__getRuntimeDependencies(pspec)
             else:
@@ -60,7 +64,7 @@ class DependencyResolver:
                         self.srcnamemap[pspec] += self.__getSrcName(path)                
                     except KeyError:
                         self.namemap[pspec] = self.__getPackageNames(path)
-                        self.srcnamemap[pspec] = self.__getSrcName(path)                
+                        self.srcnamemap[pspec] = self.__getSrcName(path)
 
     def get_srcName(self, src):
         return self.srcnamemap[src]

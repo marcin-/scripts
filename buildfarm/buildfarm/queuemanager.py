@@ -92,10 +92,12 @@ class QueueManager:
     def __circle_paths(self):
         '''removes circle packages paths from workQueue and append them as list of paths separated by space'''
         for circle in self.circleConfig.lines:
-            if not all(self.sourceDB.get_source_uri(item) in self.workQueue for item in circle[0]): continue
-            paths = [self.sourceDB.get_source_uri(item) for item in circle[0]]
-            for path in paths: self.workQueue.remove(path)
-            self.workQueue.append(" ".join(paths))
+#            for item in circle[0]:
+#                print self.sourceDB.get_source_uri(item), "OK" if self.sourceDB.get_source_uri(item) in self.workQueue else ""  
+            if all(self.sourceDB.get_source_uri(item) in self.workQueue for item in circle[0]):
+                paths = [self.sourceDB.get_source_uri(item) for item in circle[0]]
+                for path in paths: self.workQueue.remove(path)
+                self.workQueue.append(" ".join(paths))
 
     def set_work_queue(self, new_work_queue):
         self.workQueue = new_work_queue[:]
