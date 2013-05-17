@@ -34,12 +34,33 @@ class DependencyResolver:
         self.bdepmap, self.rdepmap, self.namemap, self.srcnamemap, self.pspeccount = {}, {}, {}, {}, len(self.pspeclist)
 
         for pspec in self.pspeclist:
-            self.bdepmap[pspec] = self.__getBuildDependencies(pspec)
+            if len(pspec.split()) == 1: self.bdepmap[pspec] = self.__getBuildDependencies(pspec)
+            else:
+                for path in pspec.split():
+                    try:
+                        self.bdepmap[pspec] += self.__getBuildDependencies(path)
+                    except KeyError:
+                        self.bdepmap[pspec] = self.__getBuildDependencies(path)
         for pspec in self.pspeclist:
-            self.rdepmap[pspec] = self.__getRuntimeDependencies(pspec)
+            if len(pspec.split()) == 1: self.rdepmap[pspec] = self.__getRuntimeDependencies(pspec)
+            else:
+                for path in pspec.split():
+                    try:
+                        self.rdepmap[pspec] += self.__getRuntimeDependencies(path)
+                    except KeyError:
+                        self.rdepmap[pspec] = self.__getRuntimeDependencies(path)
         for pspec in self.pspeclist:
-            self.namemap[pspec] = self.__getPackageNames(pspec)
-            self.srcnamemap[pspec] = self.__getSrcName(pspec)
+            if len(pspec.split()) == 1:
+                self.namemap[pspec] = self.__getPackageNames(pspec)
+                self.srcnamemap[pspec] = self.__getSrcName(pspec)                
+            else:
+                for path in pspec.split():
+                    try:
+                        self.namemap[pspec] += self.__getPackageNames(path)
+                        self.srcnamemap[pspec] += self.__getSrcName(path)                
+                    except KeyError:
+                        self.namemap[pspec] = self.__getPackageNames(path)
+                        self.srcnamemap[pspec] = self.__getSrcName(path)                
 
     def get_srcName(self, src):
         return self.srcnamemap[src]

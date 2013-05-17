@@ -120,7 +120,7 @@ class UpdatesManager:
             # Now the architecture check
             if utils.is_arch_excluded(spec):
                 self.final_queue.remove(pspec)
-                self.excluded_arch_packages.append(pspec)
+                #self.excluded_arch_packages.append(pspec)
 
         print "Writing %s/workqueue" % conf.workdir
         open("%s/workqueue" % conf.workdir, "w").write("\n".join(self.final_queue))

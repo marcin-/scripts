@@ -11,6 +11,7 @@
 # Please read the COPYING file.
 
 import os
+import re
 import ConfigParser
 
 class ConfigurationFileNotFound(Exception):
@@ -44,6 +45,30 @@ class Config(object):
         else:
             # value not found
             raise KeyError(attr)
+
+def read_file(path):
+    with open(path) as f:
+        return f.read().strip()
+
+class CircleConfig:
+    """Configuration class for build circle dependencies."""
+    def __init__(self, conf_file="/etc/buildfarm/circle.conf"):
+        if not os.path.exists(conf_file):
+            raise ConfigurationFileNotFound("Configuration file %s could not be accessed." % conf_file)
+        
+        self.lines = []
+        conf = read_file(conf_file)
+
+        for line in conf.split("\n"):
+            if not line.startswith("["): continue
+            line = re.sub("\]\s*\[", "][", line)
+            line = line.split("][")
+            key = re.sub("[\'\",\[\]]", " ", line[0]).split()
+            try:
+                val = re.sub("[\'\",\]\[]", " ", line[1]).split()
+            except IndexError:
+                val = []
+            self.lines.append((key, val))
 
 # Initialize configuration object
 configuration = Config()

@@ -15,6 +15,8 @@ import os
 
 from buildfarm import dependency, utils
 from buildfarm.config import configuration as conf
+from buildfarm.config import CircleConfig
+from buildfarm.circledepfinder import SourceDB
 
 # PiSi module to get pspec path from package name using component name
 from pisi.db.installdb import InstallDB
@@ -35,11 +37,16 @@ class QueueManager:
         # Ignore empty lines
         self.workQueue = list(set([s for s in self.workQueue if s]))
         self.waitQueue = list(set([s for s in self.waitQueue if s]))
+        
+        self.circleConfig = CircleConfig()
+        self.sourceDB = SourceDB(open(utils.get_path_repo_index(), "r").read())
 
+        self.__circle_paths()
+        
         if not resolv: return
 
-        self.waitQueue = dependency.DependencyResolver(self.waitQueue, self.rdresolv).resolvDeps()
         self.workQueue = dependency.DependencyResolver(self.workQueue, self.rdresolv).resolvDeps()
+        self.waitQueue = dependency.DependencyResolver(self.waitQueue, self.rdresolv).resolvDeps()
 
     def __del__(self):
         self.__serialize(self.waitQueue, self.waitQueueFileName)
@@ -51,8 +58,9 @@ class QueueManager:
         except IOError:
             return
 
-        for pspec in queueName:
-            queue.write("%s\n" % pspec)
+        for line in queueName:
+            for pspec in line.split():
+                queue.write("%s\n" % pspec)
         queue.close()
 
     def __deserialize(self, queueName, fileName):
@@ -63,23 +71,31 @@ class QueueManager:
 
         for line in queue.readlines():
             if not line.startswith("#"):
-                line = line.strip()
-                if not os.path.exists(line):
-                    # Try to guess absolute path from package name
-                    try:
-                        component = InstallDB().get_package(line).partOf
-                    except:
-                        continue
-
-                    if component:
-                        path = "%s/%s/%s/pspec.xml" % (utils.get_local_repository_url(), component.replace(".", "/"), line)
-
-                        if os.path.exists(path):
-                            queueName.append(path)
-                else:
-                    queueName.append(line)
+                for path in line.strip().split():
+                    if not os.path.exists(path):
+                        # Try to guess absolute path from package name
+                        try:
+                            component = InstallDB().get_package(path).partOf
+                        except:
+                            continue
+    
+                        if component:
+                            path = "%s/%s/%s/pspec.xml" % (utils.get_local_repository_url(), component.replace(".", "/"), path)
+    
+                            if os.path.exists(path):
+                                queueName.append(path)
+                    else:
+                        queueName.append(path)
 
         queue.close()
+
+    def __circle_paths(self):
+        '''removes circle packages paths from workQueue and append them as list of paths separated by space'''
+        for circle in self.circleConfig.lines:
+            if not all(self.sourceDB.get_source_uri(item) in self.workQueue for item in circle[0]): continue
+            paths = [self.sourceDB.get_source_uri(item) for item in circle[0]]
+            for path in paths: self.workQueue.remove(path)
+            self.workQueue.append(" ".join(paths))
 
     def set_work_queue(self, new_work_queue):
         self.workQueue = new_work_queue[:]

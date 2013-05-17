@@ -59,7 +59,7 @@ class PisiApi:
     def close(self):
         pisi.api.ctx.ui.flush_logs()
 
-    def build(self, pspec):
+    def build(self, pspec, ignore_dep = False):
         if not os.path.exists(pspec):
             logger.error("'%s' does not exist." % pspec)
 
@@ -68,6 +68,7 @@ class PisiApi:
             logger.info("Disabling sandbox for %s" % pspec)
             pisi.api.ctx.set_option("ignore_sandbox", True)
 
+        pisi.api.ctx.set_option("ignore_dependency", ignore_dep)
         logger.info("Building %s" % pspec)
         self.builder = pisi.operations.build.Builder(pspec)
 

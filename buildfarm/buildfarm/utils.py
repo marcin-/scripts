@@ -175,8 +175,10 @@ def get_package_name_from_path(pkg):
 
 def get_package_component_path(pkg):
     """Extracts system/base/gettext from full path."""
-    return os.path.dirname(pkg).partition("%s/" % \
-            get_local_repository_url())[-1]
+    res = []
+    for path in pkg.split():
+        res.append(os.path.dirname(path).partition("%s/" % get_local_repository_url())[-1])
+    return " ".join(res)
 
 def delete_pisi_files_from(directory):
     """Deletes all .pisi files found in directory."""
