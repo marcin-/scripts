@@ -267,7 +267,7 @@ if __name__ == '__main__':
                 
     def unpack():
         workdir = get_workdir(actionfile)
-        os.system("%s bi %s --unpack" % (pisi_cmd, specfile))
+        os.system("%s bi %s --unpack --ignore-dependency" % (pisi_cmd, specfile))
         dirlist = filter(lambda x: os.path.isdir("/var/pisi/" + x), os.listdir("/var/pisi"))
         newest = "/var/pisi/" + max(dirlist, key=lambda x: os.stat("/var/pisi/" + x).st_mtime) + "/work"
         if workdir:
