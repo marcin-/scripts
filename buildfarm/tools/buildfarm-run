@@ -158,6 +158,8 @@ def move_packages(new_binary_packages, new_debug_packages, new_delta_packages):
 
     def move_package(package, target):
         logger.info("Moving %s into %s" % (package, target))
+        if options["f"] and os.path.exists(os.path.join(target, package)):
+            os.remove(os.path.join(target, package))
         try:
             shutil.move(os.path.join(conf.workdir, package), target)
         except shutil.Error:
@@ -194,7 +196,8 @@ def handle_exception(exception, value, trace_back):
     logger.error(string_io.read())
 
 if __name__ == "__main__":
-    options = {"b": False     # resolv build deps only
+    options = {"b": False,    # resolv build deps only
+               "f": False     # force to overwrite packages
                }
     args, options = utils.args_checker(sys.argv[1:], options)
 

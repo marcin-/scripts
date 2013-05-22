@@ -4,19 +4,16 @@
 import sys
 import subprocess
 
-COMMANDS_NOPARAM = {
+COMMANDS = {
                            "init": "Initializes a new buildfarm environment",
                            "up": "Checks out the repository from remote SCM",
                            "missing": "Dumps the packages which has releases not built yet",
                            "circle": "Checks circle dependencies",
-                           "--version": "Prints the version\n"
-                   }
-
-COMMANDS_WITH_PARAMS = {
+                           "--version": "Prints the version\n",
                            "add": "Adds components or packages to work queue#",
                            "run": "Build and install packages#",
                            "clean": "cleans specified waitqueue and/or workqueue files"
-                        }
+           }
 
 ADD = {
                 "-r": "reset queues", 
@@ -29,7 +26,8 @@ ADD = {
        }
 
 RUN = {
-                "-b": "resolv build deps only"
+                "-b": "resolv build deps only",
+                "-f": "force to overwrite packages"
        }
 
 def print_help (commands):
@@ -46,16 +44,11 @@ def usage():
     print """\
 Pisilinux buildfarm framework
 
-Usage: %s COMMAND [PARAMS]
-    Where COMMAND (without params) can be one of the following:
+Usage: %s COMMAND [OPTIONS] [PARAMS]
+    Where COMMAND can be one of the following:
 """ % sys.argv[0]
-    print_help(COMMANDS_NOPARAM)
+    print_help(COMMANDS)
 
-    print """\
-
-    Where COMMAND (with params) can be one of the following:
-"""
-    print_help(COMMANDS_WITH_PARAMS)
     print
 
     return 1
@@ -73,13 +66,7 @@ if __name__ == "__main__":
         import buildfarm
         print "Version: %s" % buildfarm.__version__
 
-    elif cmd in COMMANDS_NOPARAM:
-        if args: print "%s dosn't need params, skipping: %s" % (cmd, " ".join(args))
-        sys.exit(subprocess.call(["buildfarm-%s" % cmd]))
-    elif cmd in COMMANDS_WITH_PARAMS:
-        if not args:
-            print "%s needs at least one param." % cmd
-            sys.exit(usage())
+    elif cmd in COMMANDS:
         sys.exit(subprocess.call(["buildfarm-%s" % cmd] + args))
     else:
         sys.exit(usage())
