@@ -324,7 +324,13 @@ def filter_pspec_list(pspec_list, exclude = []):
 
             for subpkg in spec.packages:
                 expected_file = pisi.util.package_filename(subpkg.name, ver, release)
-                if os.path.exists(os.path.join(binary_dir, expected_file)):
+                name = subpkg.name if not subpkg.name.split("-").pop() in ["devel", "32bit", "doc", "docs", "userspace"] else subpkg.name[:-1 - len(subpkg.name.split("-").pop())]
+                if os.path.exists(os.path.join(binary_dir,
+                                               expected_file)) or \
+                   os.path.exists(os.path.join(binary_dir,
+                                               name[0:4] if name.startswith("lib") and len(name) > 3 else name.lower()[0],
+                                               name,
+                                               expected_file)):
                     print "Skipping: %s" % pkg
                     break
             else:
