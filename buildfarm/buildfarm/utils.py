@@ -303,7 +303,7 @@ def update_local_repo_index(get_list = False):
  
     if get_list: return pspeclist
  
-def filter_pspec_list(pspec_list, exclude = []):
+def filter_pspec_list(pspec_list, exclude = [], verbose = True):
     binary_dir = get_compiled_packages_directory()
     missing_pkgs = set()
 
@@ -331,7 +331,7 @@ def filter_pspec_list(pspec_list, exclude = []):
                                                name[0:4] if name.startswith("lib") and len(name) > 3 else name.lower()[0],
                                                name,
                                                expected_file)):
-                    print "Skipping: %s" % pkg
+                    if verbose: print "Skipping: %s" % pkg
                     break
             else:
                 missing_pkgs.add(pkg)    
