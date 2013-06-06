@@ -20,7 +20,8 @@ ADD = {
                 "-w": "write to work queue",
                 "-c": "add components to work queue", 
                 "-p": "add packages to work queue",
-                "-i": "don't add build dependencies", 
+                "-d": "don't add build and runtime dependencies",
+                "-D": "don't add runtime dependencies", 
                 "-x": "update local repo index",
                 "-s": "skip already compiled packages"
        }

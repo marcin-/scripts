@@ -19,9 +19,10 @@ if __name__ == "__main__":
                "w": False,      # write to work queue
                "c": False,      # add components to work queue
                "p": False,      # add packages to work queue
-               "i": False,      # don't add build dependencies 
+               "d": False,      # don't add build and runtime dependencies
+               "D": False,      # don't add runtime dependencies 
                "x": False,      # update local repo index
-               "s": False      # skip already compiled packages
+               "s": False       # skip already compiled packages
                }
     args, options = utils.args_checker(sys.argv[1:], options)
     
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     sys.stderr.write("\n- ".join(queue))
     sys.stderr.write("\n")
 
-    if not options["i"]:
+    if not options["d"]:
         missing_paths = True
         while missing_paths:    
             dr_work = DependencyResolver(queue)   
@@ -114,6 +115,13 @@ if __name__ == "__main__":
                         if sourcedb.has_spec(dep_src_name):
                             source_uri = sourcedb.get_source_uri(dep_src_name)
                             if not source_uri in queue and not source_uri in missing_paths: missing_paths.append(source_uri)
+                    if options["D"]: continue
+                    for pkg in  sourcedb.get_spec(src_name).packages:
+                        for rd in  pkg.packageDependencies:
+                            dep_src_name = str(sourcedb.pkgtosrc(str(rd).split()[0]))   # split()[0] -> 'tcl-devel version >= 8.6.0'
+                            if sourcedb.has_spec(dep_src_name):
+                                source_uri = sourcedb.get_source_uri(dep_src_name)
+                                if not source_uri in queue and not source_uri in missing_paths: missing_paths.append(source_uri)
     
             if missing_paths:
                 sys.stderr.write("Adding missed build deps:\n- ")
