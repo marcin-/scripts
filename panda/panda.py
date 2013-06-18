@@ -19,6 +19,7 @@ grub_default_file_new = "/etc/default/grub.new"
 grub_default_file_back = "/etc/default/grub.back"
 kernel_file = "/etc/kernel/kernel"
 kernel_file_pae = "/etc/kernel/kernel-pae"
+nvidia_blacklist_file = "/etc/modprobe.d/nvidia-blacklist.conf"
 
 class Panda():
     '''Pardus Alternative Driver Administration'''
@@ -169,6 +170,11 @@ class Panda():
         if status in ["os", "generic", "vendor"] and modified:
             self.update_grub_cfg()
             self.set_libGL(self.driver_name if self.driver_name in ["nvidia-current", "nvidia96", "nvidia173", "fglrx"] and status == "vendor" else "mesa")
+            if self.driver_name in ["nvidia-current", "nvidia96", "nvidia173"] and status == "vendor":
+                open(nvidia_blacklist_file, "w").write("blacklist nouveau\n")
+            elif self.driver_name in ["nvidia-current", "nvidia96", "nvidia173"] and os.path.isfile(nvidia_blacklist_file):
+                os.remove(nvidia_blacklist_file)
+                
 
         return status
 
@@ -271,11 +277,16 @@ class Panda():
                     if arg == "os":
                         try :
                             params["blacklist"] = [x for x in params["blacklist"] if x != self.os_driver]
+                            if len(params["blacklist"]) == 0: del params["blacklist"]
                         except KeyError:
                             pass
                         try :
                             params["xorg"] = [x for x in params["xorg"] if x !=  "safe"]
                             if not params["xorg"] or not params["xorg"][0]: del params["xorg"] 
+                        except KeyError:
+                            pass
+                        try :
+                            del params["vga"] 
                         except KeyError:
                             pass
                         status = "os"
@@ -291,6 +302,7 @@ class Panda():
                             if not params["xorg"] or not params["xorg"][0]: del params["xorg"]
                         except KeyError:
                             pass
+                        if self.driver_name in ["nvidia-current"]: params["vga"] = ["794"]
                         status = "vendor"
 
                     elif arg == "generic":
@@ -300,7 +312,7 @@ class Panda():
                             params["xorg"] = ["safe"]
                         status = "generic"
 
-                    new_line = " ".join(["%s%s%s" % (k, "=" if l[0] else "", ",".join([v for v in l])) for k, l in sorted(params.items())])
+                    new_line = " ".join(["%s%s" % ("%s=" % k if l[0] else k, ",".join([v for v in l])) for k, l in sorted(params.items())])
                     configured = old_line != new_line
                     new_line = 'GRUB_CMDLINE_LINUX="%s"\n' % new_line
                     grub_tmp.write(new_line)
@@ -415,6 +427,7 @@ if __name__ == '__main__':
     print p.get_grub_state()
     print p.get_all_driver_packages()
     print p.get_blacklisted_module()
+#    print p.update_grub_entries("vendor")
     print p.update_system_files("vendor")
     print p.get_needed_driver_packages(installable=False)
 
