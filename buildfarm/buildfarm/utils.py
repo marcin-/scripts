@@ -328,8 +328,8 @@ def filter_pspec_list(pspec_list, exclude = [], verbose = True):
                 if os.path.exists(os.path.join(binary_dir,
                                                expected_file)) or \
                    os.path.exists(os.path.join(binary_dir,
-                                               name[0:4] if name.startswith("lib") and len(name) > 3 else name.lower()[0],
-                                               name,
+                                               name[0:4].lower() if name.startswith("lib") and len(name) > 3 else name.lower()[0],
+                                               name.lower(),
                                                expected_file)):
                     if verbose: print "Skipping: %s" % pkg
                     break
