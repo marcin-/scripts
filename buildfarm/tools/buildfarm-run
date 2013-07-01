@@ -21,6 +21,7 @@ import cStringIO
 
 import pisi.context as ctx
 import pisi.api
+import pisi.util
 from pisi.file import File
 
 from buildfarm import logger, mailer, queuemanager, pisiinterface, utils
@@ -158,10 +159,14 @@ def move_packages(new_binary_packages, new_debug_packages, new_delta_packages):
 
     def move_package(package, target):
         package = os.path.basename(package)
+        name, version = pisi.util.parse_package_name(package)
+        if name.split("-").pop() in ["devel", "32bit", "doc", "docs", "userspace"]: name = name[:-1 - len(name.split("-").pop())]
+        if not options["f"] and os.path.isfile(os.path.join(target,
+                                                            name[0:4].lower() if name.startswith("lib") and len(name) > 3 else name.lower()[0],
+                                                            name.lower(),
+                                                            package)): return
+
         logger.info("Moving %s into %s" % (package, target))
-        if options["f"] and os.path.isfile(os.path.join(target, package)):
-            logger.info("Reoving old package: %s" % os.path.join(target, package))
-            os.remove(os.path.join(target, package))
         try:
             shutil.move(os.path.join(conf.workdir, package), target)
         except shutil.Error:
