@@ -89,6 +89,10 @@ def bump(options, path):
             sys.exit(1)
         new_version = options.ver
         new_archive = old_archive.replace(old_version, new_version)
+        if "." in old_version:
+            mver = ".".join(old_version.split(".")[:-1])
+            if "/%s/" % mver in new_archive:
+                 new_archive = new_archive.replace("/%s/" % mver, "/%s/" % ".".join(new_version.split(".")[:-1]))
     
     info["RELEASE"] = int(last.release) + 1
     info["DATE"] = time.strftime("%Y-%m-%d")
