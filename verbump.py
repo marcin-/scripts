@@ -108,6 +108,8 @@ def bump(options, path):
             new_pspec = "\n".join((new_pspec, new_line))
         elif "<History>" in line:
             new_pspec = "\n".join((new_pspec, "    <History>\n%s" % new_release))
+        elif options.vfrom and "<Dependency versionFrom" in line:
+            new_pspec = "\n".join((new_pspec, line.replace(old_version, new_version)))
         else: 
             if not new_pspec: new_pspec = line
             else: new_pspec = "\n".join((new_pspec, line))
@@ -146,6 +148,7 @@ if __name__ == "__main__":
     parser.add_option("-m", "--bump-many", dest="many", help="version bump for many packages")
     parser.add_option("-u", "--new-uri", dest="uri", help="version bump using specified uri")
     parser.add_option("-v", "--new-version", dest="ver", help="version bump using specified version")
+    parser.add_option("-f", "--from-version", dest="vfrom", help="modify versionFrom too")
     (options, args) = parser.parse_args()
     try:
         path = args[0]
