@@ -62,6 +62,8 @@ def send(msg, pspec = "", _type = "", subject=""):
 
         last_log = open(logfile.replace(".txt", ".log")).read().split("\n")[-50:]
 
+        if _type == "check": package_name_with_component = ""
+
     message = templates.ALL[_type] % {
                                         'log'          : "\n".join(last_log),
                                         'recipientName': " ".join(recipients_name),
