@@ -25,9 +25,13 @@ import pisi.context as ctx
 import pisi.api
 import pisi.util
 from pisi.file import File
+from pisi.specfile import SpecFile
+from pisi.db.packagedb import PackageDB
 
 from buildfarm import logger, mailer, queuemanager, pisiinterface, utils
 from buildfarm.config import configuration as conf
+
+MAIN = "testing"
 
 def build_packages():
     if not os.path.exists(os.path.join(utils.get_package_log_directory(), "check")):
@@ -58,13 +62,16 @@ def build_packages():
     mailer.info("I'm starting to compile packages in the following order:\n\n%s" % "\n".join(stripped_work_queue))
     logger.raw()
 
+    pdb = PackageDB()
+    main_packages = pdb.list_packages(MAIN)
+
     for line in queue:
         #utils.mount_tmpfs()
         remove_checkfile = True
 
         circle = False if len(line.split()) == 1 else True
         for pass_ in range (1 if circle else 2, 3):
-            for pspec in line.split():
+            for pspec in line.split():                
                 package_name = utils.get_package_name_from_path(pspec)
                 package_name_with_component = utils.get_package_component_path(pspec)
                 logfile = os.path.join(utils.get_package_log_directory(),
@@ -72,6 +79,21 @@ def build_packages():
                 checkfile = os.path.join(utils.get_package_log_directory(),
                                          "check",
                                          utils.get_package_logfile_name(pspec))
+
+                spec = SpecFile(pspec)
+                try:
+                    mpkg_ver, mpkg_rel = pdb.get_version_and_distro_release(package_name, MAIN)[:2]
+                    if spec.history[0].version == mpkg_ver and spec.history[0].release == mpkg_rel:
+                        logger.raw()
+                        logger.info("%s-%s-%s exists in the main repo!\nIncrease release, please." % (package_name, mpkg_ver, mpkg_rel))
+                        mailer.info("%s-%s-%s exists in the main repo!\nIncrease release, please." % (package_name, mpkg_ver, mpkg_rel),
+                                    "%s cannot be build." % package_name)
+                        qmgr.removeFromWorkQueue(pspec)
+                        if not package_list: return
+                        break
+                except Exception:
+                    pass
+                
                 if remove_checkfile and os.path.exists(checkfile):
                     os.remove(checkfile)
                     remove_checkfile = False
@@ -191,6 +213,9 @@ def build_packages():
     # Run hooks
     # print "\nRunning hooks"""
     # utils.run_hooks()
+
+    print "\nUpdating repositories"
+    os.system("pisi ur")
 
     # Check packages containing binaries and libraries broken by any package update
     print "\nChecking binary consistency with revdep-rebuild"
