@@ -138,7 +138,7 @@ def build_packages():
                                                  stderr=subprocess.PIPE)
                             out, err = p.communicate()
                             if err:
-                                mailer.check(err, pspec, "checkelf error for %s" % name)
+                                mailer.check("<BR>".join(err.split("\n")), pspec, "checkelf error for %s" % name)
                                 open(checkfile, "w").write(err)
                             else:
                                 missing = []
@@ -151,7 +151,7 @@ def build_packages():
                                         continue 
                                     missing_index = line.find("Missing dependencies")
                                 if missing:
-                                    mailer.check(out, pspec, "checkelf output for %s" % name)
+                                    mailer.check("<BR>".join(out.split("\n")), pspec, "checkelf output for %s" % name)
                                     logger.info("Missing dependencies: %s" % ",".join(missing))
                                 open(checkfile, "a" if os.path.exists(checkfile) else "w").write(out)
                 finally:

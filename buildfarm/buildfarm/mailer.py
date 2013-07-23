@@ -50,8 +50,8 @@ def send(msg, pspec = "", _type = "", subject=""):
         spec = pisi.specfile.SpecFile(os.path.join(utils.get_local_repository_url(), pspec))
         recipients_name.append(spec.source.packager.name)
         recipients_email.append(spec.source.packager.email)
-        last_updater_name = spec.history.name[0]
-        last_updater_email = spec.history.email[0]
+        last_updater_name = spec.history[0].name
+        last_updater_email = spec.history[0].email
 
         package_name = os.path.basename(os.path.dirname(pspec))
         package_name_with_component = utils.get_package_component_path(pspec)

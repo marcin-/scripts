@@ -98,14 +98,14 @@ From: %(distribution)s %(release)s %(arch)s Buildfarm <%(mailFrom)s>
 To: %(mailToUpdater)s
 Cc: %(ccList)s
 Subject: [%(subjectID)s] %(subject)s
-Content-Type: text/plain;
+Content-Type: text/html;
             charset="utf-8"
 
 Hello,
-
+<BR><BR>
 This message is sent from Pisi Linux buildfarm. Please do not reply as it is automatically generated.
-
-%(message)s
+<BR>
+<pre><font face="monospace">%(message)s</font></pre>
 
 """
 
