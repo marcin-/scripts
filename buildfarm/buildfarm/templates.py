@@ -91,6 +91,24 @@ This message is sent from Pisi Linux buildfarm. Please do not reply as it is aut
 
 """
 
+## Check info
+
+CHECK_MESSAGE = """\
+From: %(distribution)s %(release)s %(arch)s Buildfarm <%(mailFrom)s>
+To: %(mailToUpdater)s
+Cc: %(ccList)s
+Subject: [%(subjectID)s] %(subject)s
+Content-Type: text/plain;
+            charset="utf-8"
+
+Hello,
+
+This message is sent from Pisi Linux buildfarm. Please do not reply as it is automatically generated.
+
+%(message)s
+
+"""
+
 ## Announce
 
 ANNOUNCE_MESSAGE = """\
@@ -113,4 +131,5 @@ ALL =  {
          'error'     : ERROR_MESSAGE,
          'announce'  : ANNOUNCE_MESSAGE,
          'info'      : INFO_MESSAGE,
+         'check'      : CHECK_MESSAGE
        }

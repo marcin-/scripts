@@ -41,6 +41,7 @@ def send(msg, pspec = "", _type = "", subject=""):
 
 
     recipients_name, recipients_email = [], []
+    last_updater_name, last_updater_email = "", "" 
     logfilename = ""
     package_name_with_component = ""
     package_name = ""
@@ -49,6 +50,8 @@ def send(msg, pspec = "", _type = "", subject=""):
         spec = pisi.specfile.SpecFile(os.path.join(utils.get_local_repository_url(), pspec))
         recipients_name.append(spec.source.packager.name)
         recipients_email.append(spec.source.packager.email)
+        last_updater_name = spec.history.name[0]
+        last_updater_email = spec.history.email[0]
 
         package_name = os.path.basename(os.path.dirname(pspec))
         package_name_with_component = utils.get_package_component_path(pspec)
@@ -63,6 +66,8 @@ def send(msg, pspec = "", _type = "", subject=""):
                                         'log'          : "\n".join(last_log),
                                         'recipientName': " ".join(recipients_name),
                                         'mailTo'       : ", ".join(recipients_email),
+                                        'updaterName'  : last_updater_name,
+                                        'mailToUpdater': last_updater_email,
                                         'ccList'       : conf.cclist,
                                         'mailFrom'     : conf.mailfrom,
                                         'announceAddr' : conf.announceaddr,
@@ -104,6 +109,9 @@ def error(message, pspec, subject=""):
 
 def info(message, subject=""):
     send(message, _type="info", subject=subject)
+
+def check(message, pspec, subject=""):
+    send(message, pspec, _type="check", subject=subject)
 
 def announce(message, subject=""):
     send(message, _type="announce", subject=subject)

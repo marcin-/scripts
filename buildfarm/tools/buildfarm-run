@@ -13,11 +13,13 @@
 import os
 os.environ["LC_ALL"] = "C"
 
+import re
 import sys
 import copy
 import shutil
 import traceback
 import cStringIO
+import subprocess
 
 import pisi.context as ctx
 import pisi.api
@@ -28,6 +30,9 @@ from buildfarm import logger, mailer, queuemanager, pisiinterface, utils
 from buildfarm.config import configuration as conf
 
 def build_packages():
+    if not os.path.exists(os.path.join(utils.get_package_log_directory(), "check")):
+        os.makedirs(os.path.join(utils.get_package_log_directory(), "check"))
+
     qmgr = queuemanager.QueueManager(rdresolv = not options["b"])
 
     qmgr.transfer_all_packages_to_work_queue()
@@ -55,6 +60,8 @@ def build_packages():
 
     for line in queue:
         #utils.mount_tmpfs()
+        remove_checkfile = True
+
         circle = False if len(line.split()) == 1 else True
         for pass_ in range (1 if circle else 2, 3):
             for pspec in line.split():
@@ -62,6 +69,12 @@ def build_packages():
                 package_name_with_component = utils.get_package_component_path(pspec)
                 logfile = os.path.join(utils.get_package_log_directory(),
                                        utils.get_package_logfile_name(pspec))
+                checkfile = os.path.join(utils.get_package_log_directory(),
+                                         "check",
+                                         utils.get_package_logfile_name(pspec))
+                if remove_checkfile and os.path.exists(checkfile):
+                    os.remove(checkfile)
+                    remove_checkfile = False
                 build_output = open(logfile, "w")
                 logger.raw()
         
@@ -79,7 +92,7 @@ def build_packages():
                 try:
                     # First let's build the package
                     pisi_api.build(pspec, ignore_dep=pass_ == 1)
-        
+
                     # These lists contain full path to the .pisi files
                     new_binary_packages = pisi_api.get_new_packages()
                     new_debug_packages = pisi_api.get_new_debug_packages()
@@ -112,6 +125,35 @@ def build_packages():
                             if line.endswith(pspec): qmgr.removeFromWorkQueue(line)
                         move_packages(new_binary_packages, new_debug_packages, new_delta_packages)
                         package_list += [os.path.basename(pkg) for pkg in new_binary_packages]
+
+                        for pkg in new_binary_packages:
+                            name = pisi.util.parse_package_name(os.path.basename(pkg))[0]
+                            if re.search("-(devel|docs?)$", name) or \
+                                         "-i18n-" in name or \
+                                         "-l10n-" in name:
+                                continue
+                            logger.info("Running checkelf for: %s" % name)
+                            p = subprocess.Popen(["checkelf", "-n", name],
+                                                 stdout=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE)
+                            out, err = p.communicate()
+                            if err:
+                                mailer.check(err, pspec, "checkelf error for %s" % name)
+                                open(checkfile, "w").write(err)
+                            else:
+                                missing = []
+                                missing_index = -1
+                                for line in out.split("\n"):
+                                    if not missing_index == -1:
+                                        if not "---" in line:
+                                            if line[missing_index:].strip():
+                                                missing.append(line[missing_index:].strip())
+                                        continue 
+                                    missing_index = line.find("Missing dependencies")
+                                if missing:
+                                    mailer.check(out, pspec, "checkelf output for %s" % name)
+                                    logger.info("Missing dependencies: %s" % ",".join(missing))
+                                open(checkfile, "a" if os.path.exists(checkfile) else "w").write(out)
                 finally:
                     # Unmount tmp_dir if any
                     # utils.umount_tmpfs()
