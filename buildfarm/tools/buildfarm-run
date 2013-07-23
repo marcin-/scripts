@@ -133,7 +133,7 @@ def build_packages():
                                          "-l10n-" in name:
                                 continue
                             logger.info("Running checkelf for: %s" % name)
-                            p = subprocess.Popen(["checkelf", "-n", name],
+                            p = subprocess.Popen(["checkelf", "-ns" if utils.get_package_component_path(pspec).startswith("system/base") else "-n", name],
                                                  stdout=subprocess.PIPE,
                                                  stderr=subprocess.PIPE)
                             out, err = p.communicate()
