@@ -85,8 +85,8 @@ def build_packages():
                     mpkg_ver, mpkg_rel = pdb.get_version_and_distro_release(package_name, MAIN)[:2]
                     if spec.history[0].version == mpkg_ver and spec.history[0].release == mpkg_rel:
                         logger.raw()
-                        logger.info("%s-%s-%s exists in the main repo!\nIncrease release, please." % (package_name, mpkg_ver, mpkg_rel))
-                        mailer.info("%s-%s-%s exists in the main repo!\nIncrease release, please." % (package_name, mpkg_ver, mpkg_rel),
+                        logger.info("%s-%s-%s exists in the main repo!" % (package_name, mpkg_ver, mpkg_rel))
+                        mailer.info("%s-%s-%s exists in the main repo!" % (package_name, mpkg_ver, mpkg_rel),
                                     "%s cannot be build." % package_name)
                         qmgr.removeFromWorkQueue(pspec)
                         if not package_list: return
