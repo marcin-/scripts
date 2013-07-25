@@ -60,7 +60,7 @@ def bump(options, path):
         print("Multiarchive pspec.xml not supported yet.")
         sys.exit(1)
     old_archive = old_archive[0].uri
-    old_type = re.sub(ver_ext_pattern, "\\2", old_archive).replace(".", "")
+    old_type = re.sub(ver_ext_pattern, "\\2", old_archive).replace(".", "").replace("src", "")
     new_type = old_type
 
     last = specfile.history[0]
@@ -82,7 +82,7 @@ def bump(options, path):
             sys.exit(1)
         new_archive = options.uri
         new_version = re.sub(ver_ext_pattern, "\\1", new_archive)
-        new_type = re.sub(ver_ext_pattern, "\\2", new_archive).replace(".", "").replace("tgz", "targz")
+        new_type = re.sub(ver_ext_pattern, "\\2", new_archive).replace(".", "").replace("tgz", "targz").replace("src", "")
     elif options.ver:
         if not re.search("[\d\.]", options.ver):
             print "Wrong version number: %s" % options.ver
