@@ -150,7 +150,7 @@ def build_packages():
 
                         for pkg in new_binary_packages:
                             name = pisi.util.parse_package_name(os.path.basename(pkg))[0]
-                            if re.search("-(devel|docs?)$", name) or \
+                            if re.search("-docs?$", name) or \
                                          "-i18n-" in name or \
                                          "-l10n-" in name:
                                 continue
