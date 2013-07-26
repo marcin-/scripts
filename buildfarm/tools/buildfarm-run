@@ -168,8 +168,9 @@ def build_packages():
                                 for line in out.split("\n"):
                                     if not missing_index == -1:
                                         if not "---" in line:
-                                            if line[missing_index:].strip():
-                                                missing.append(line[missing_index:].strip())
+                                            missing_dep = line[missing_index:].strip() 
+                                            if missing_dep and not missing_dep.startswith("glibc"):
+                                                missing.append(missing_dep)
                                         continue 
                                     missing_index = line.find("Missing dependencies")
                                 if missing:
