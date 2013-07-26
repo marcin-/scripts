@@ -87,7 +87,7 @@ def build_packages():
                         logger.raw()
                         logger.info("%s-%s-%s exists in the main repo!" % (package_name, mpkg_ver, mpkg_rel))
                         mailer.info("%s-%s-%s exists in the main repo!" % (package_name, mpkg_ver, mpkg_rel),
-                                    "%s cannot be build." % package_name)
+                                    "%s cannot be built." % package_name)
                         qmgr.removeFromWorkQueue(pspec)
                         if not package_list and not qmgr.workQueue: return
                         break
