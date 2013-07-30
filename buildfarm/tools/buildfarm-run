@@ -50,6 +50,7 @@ def build_packages():
     home_dir = os.environ["HOME"]
 
     package_list = []
+    ignored_package_list = []
 
     # Compiling current work queue
 
@@ -87,8 +88,9 @@ def build_packages():
                         logger.raw()
                         logger.info("%s-%s-%s exists in the main repo!" % (package_name, mpkg_ver, mpkg_rel))
                         mailer.info("%s-%s-%s exists in the main repo!" % (package_name, mpkg_ver, mpkg_rel),
-                                    "%s cannot be built." % package_name)
+                                    "%s cannot be built." % package_name_with_component)
                         qmgr.removeFromWorkQueue(pspec)
+                        ignored_package_list.append(package_name_with_component)
                         if not package_list and not qmgr.workQueue: return
                         break
                 except Exception:
@@ -185,6 +187,8 @@ def build_packages():
     # Use a/b/pspec.xml instead of full path in e-mails
     stripped_wait_queue = [utils.get_package_component_path(pkg) for pkg in qmgr.get_wait_queue()]
 
+    if ignored_package_list:
+        mailer.info("\n".join(ignored_package_list), "Auto ignored packages")
     if stripped_wait_queue:
         logger.info("Wait Queue: %s" % stripped_wait_queue)
         mailer.info("Queue finished with problems and those packages couldn't be compiled:\n\n%s\n\n\nNew binary packages are;\n\n%s\n\nnow in repository" % ("\n".join(stripped_wait_queue), "\n".join(package_list)))
