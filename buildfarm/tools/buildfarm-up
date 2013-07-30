@@ -43,7 +43,14 @@ class UpdatesManager:
             self.__copy_files("self.updated")
             self.final_queue.extend(self.get_updated_packages())
 
-        if self.removed or self.new or self.updated: utils.update_local_repo_index()
+        if self.removed or self.new or self.updated:
+            try: 
+                utils.update_local_repo_index()
+            except pisi.pxml.xmlfile.Error, e:
+                print "New/Updated packages:"
+                print "\n".join(self.get_new_packages() + self.get_updated_packages())
+                print "ERROR:", e
+                sys.exit(1)
 
     def __check_diffs(self):
         src = {}
