@@ -23,14 +23,10 @@ def write_file(path, content, mode = "w"):
     open(path, mode).write(content)
 
 def create(type, path, mode, uid, gid, age, arg):
-    print type, path, mode, uid, gid, age, arg
-    if not re.search("^\d{4}$", mode): mode="0755"
-    mode = int(mode, 8)
-    if not uid: uid = "root"
-    if not gid: gid = "root"
-    uid = getpwnam(uid).pw_uid
-    gid = getgrnam(gid).gr_gid
-    if type == "D":
+    if type == "L":
+        if not os.path.islink(path): os.symlink(arg, path)
+        return
+    elif type == "D":
         if os.path.isdir(path): shutil.rmtree(path)
         elif os.path.islink(path): os.remove(path)
     if type.lower() == "d":
@@ -44,25 +40,38 @@ def create(type, path, mode, uid, gid, age, arg):
         write_file(path, arg, mode = "a" if type == "f" else "w")
         os.chown(path, uid, gid)
 
+USAGE = """\
+%s PATH(S)  
+\tparsing specified .conf files.
+%s
+\tparsing .conf files in:
+\t%s
+""" % (sys.argv[0], sys.argv[0], "; ".join(DEFAULT_CONFIG_DIRS))
+    
+def usage():
+    print USAGE
+    sys.exit(0)
+
 if __name__ == "__main__":
-    def ewe(msg):
-        print msg
-        sys.exit(1)
+    if ("-h" or "--help") in sys.argv: usage()
 
     config_files = {}
+    errors = []
+
     def add_config_file(head, tail):
         try:
             config_files[head].append(tail)
         except KeyError:
             config_files[head] = [tail]
 
-    for arg in sys.argv[1:]:
-        (head, tail) = os.path.split(arg)
-        if not tail.endswith(".conf"): ewe("%s is not .conf file" % tail)
-        elif not head: ewe("Full path is needed for %s args." % sys.argv[0])
-        elif not os.path.isdir(head): ewe("Path %s not exists." % head)
-        elif not os.path.isfile(arg): ewe("File %s not exists." % arg)
-        add_config_file(head, tail)
+    if sys.argv[1:]:
+        for arg in sys.argv[1:]:
+            (head, tail) = os.path.split(arg)
+            if not tail.endswith(".conf"): errors.append("%s is not .conf file" % tail)
+            elif not head: errors.append("Full path is needed for %s args." % sys.argv[0])
+            elif not os.path.isdir(head): errors.append("Path %s not exists." % head)
+            elif not os.path.isfile(arg): errors.append("File %s not exists." % arg)
+            add_config_file(head, tail)
     else:
         all_files_names = []
         for head in DEFAULT_CONFIG_DIRS:
@@ -76,11 +85,33 @@ if __name__ == "__main__":
     for d, fs in config_files.items():
         for f in fs:
             conf = read_file(os.path.join(d, f))
+            # parse config file
             for line in [l for l in conf.split("\n") if l and not (l.startswith("#") or l.isspace())]:
+                cerr = len(errors)
                 fields = line.split()
-                if len(fields) < 2: ewe("Wrong %s file line: %s" % (os.path.join(d, f), line))
-                elif len(fields) < 7: fields.extend(["",] * (7 - len(fields)))
-                elif len(fields) > 7: fields = fields[0:6] + [re.sub(".*?(%s\s+\%s.*)$" % (fields[6], fields[7]), "\\1", line)]
+                if len(fields) < 5: errors.append("%s is invalid .conf file. Not enough args in line: %s" % (os.path.join(d, f), line))
+                if len(fields) < 7: fields.extend(["",] * (7 - len(fields)))
+                elif len(fields) > 7: fields = fields[0:6] + [re.sub(".*?(%s)\s*$" % "\s+".join(fields[6:]), "\\1", line)]
                 for n, i in enumerate(fields):
                     if i == "-": fields[n] = ""
-                create(*fields)
+                if not fields[0] in ["d", "D", "f", "F", "L", "w"]: errors.append("%s - wrong type in file: %s" % (fields[0], os.path.join(d, f)))
+                elif fields[0] == "L":
+                    if not fields[6]: errors.append("Wro specified in file: %s" % os.path.join(d, f))
+                    elif not os.path.exists(fields[6]): errors.append("%s - wrong path in file: %s" % (fields[6], os.path.join(d, f)))
+                elif fields[0] in ["f", "F", "w"] and os.path.isdir(fields[1]): errors.append("Cannot write to file. %s is directory." % fields[1]) 
+                else:
+                    if not fields[2]: errors.append("No mode specified in file: %s" % os.path.join(d, f))
+                    elif not re.search("^\d{3,4}$", fields[2]): errors.append("%s - wrong mode in file: %s" % (fields[2], os.path.join(d, f)))
+                    else: fields[2] = int(fields[2], 8)
+                    try:
+                        fields[3] = getpwnam(fields[3]).pw_uid
+                    except KeyError:
+                        errors.append("User %s not exists (%s)" % (fields[3], os.path.join(d, f)))
+                    try:
+                        fields[4] = getgrnam(fields[4]).gr_gid
+                    except KeyError:
+                        errors.append("Group %s not exists (%s)" % (fields[4], os.path.join(d, f)))
+                # 
+                if len(errors) == cerr: create(*fields)
+
+    print "\n".join(errors)
