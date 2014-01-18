@@ -796,17 +796,6 @@ def trigger_failed_udev_events():
     """Trigger only the events which are failed during a previous run."""
     if os.path.exists("/dev/.udev/failed"):
         run("/sbin/udevadm", "trigger", "--type=failed", "--action=add")
-    #run_full("la", "/run/udev")
-    out1, err1 = capture("tree", "/run/udev/")
-    out2, err2 = capture("cat", "/run/udev/queue.bin")
-    f = open("/tmp/out.txt", "w")
-    f.write(out1)
-    f.write("------")
-    f.write(out2)
-    f.close()
-
-    #Very hacky code, we have to find a proper solution to trigger devices smoothly
-    run("/sbin/udevadm", "trigger")
 
 @skip_for_lxc_guests
 def copy_udev_rules():
@@ -839,9 +828,8 @@ def start_udev():
     # When these files are missing, lots of trouble happens
     # so we double check their existence
     ######
-    # we don't need that mudur_tmpfiles and baselayout.conf creates this dir and symlink
+    # we don't need that; mudur_tmpfiles and baselayout.conf creates this dir and symlink
     #create_directory("/run/shm")
-    #if not stat.S_IMODE(os.stat("/run/shm").st_mode) == 511: os.chmod("/run/shm", 511)
     #create_link("/run/shm", "/dev/shm")
 
     # Start udev daemon
@@ -864,6 +852,7 @@ def start_udev():
     # Trigger events for all devices
     run("/sbin/udevadm", "trigger", "--type=subsystems", "--action=add")
     run("/sbin/udevadm", "trigger", "--type=devices", "--action=add")
+    run("/sbin/udevadm", "trigger", "--type=devices", "--action=change")
 
     # Stop udevmonitor
     os.kill(pid, 15)
