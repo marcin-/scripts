@@ -30,8 +30,12 @@ def create(type, path, mode, uid, gid, age, arg):
         if os.path.isdir(path): shutil.rmtree(path)
         elif os.path.islink(path): os.remove(path)
     elif type == "c":
-        arg = arg.split(":")
-        os.mknod(path, mode, os.makedev(arg[0], arg[1]))
+        if not os.path.isdir(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        if not os.path.isfile(path):
+            arg = arg.split(":")
+            os.mknod(path, mode, os.makedev(arg[0], arg[1]))
+            os.chown(path, uid, gid)
     if type.lower() == "d":
         if not os.path.isdir(path): os.makedirs(path, mode)
         os.chown(path, uid, gid)
