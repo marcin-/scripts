@@ -838,9 +838,11 @@ def start_udev():
 
     # When these files are missing, lots of trouble happens
     # so we double check their existence
-    create_directory("/run/shm")
-    if not stat.S_IMODE(os.stat("/run/shm").st_mode) == 511: os.chmod("/run/shm", 511)
-    create_link("/run/shm", "/dev/shm")
+    ######
+    # we don't need that mudur_tmpfiles and baselayout.conf creates this dir and symlink
+    #create_directory("/run/shm")
+    #if not stat.S_IMODE(os.stat("/run/shm").st_mode) == 511: os.chmod("/run/shm", 511)
+    #create_link("/run/shm", "/dev/shm")
 
     # Start udev daemon
     UI.info(_("Starting udev"))
@@ -1400,9 +1402,10 @@ def main():
         # Create tmpfiles
         UI.info(_("Creating tmpfiles"))
         if not os.path.isdir("/run/tmpfiles.d"): create_directory("/run/tmpfiles.d")
-        run_full("/usr/bin/kmod", "static-nodes", "--format=tmpfiles", "--output=/run/tmpfiles.d/kmod.conf")
+        run("/usr/bin/kmod", "static-nodes", "--format=tmpfiles", "--output=/run/tmpfiles.d/kmod.conf")
         out = capture("/sbin/mudur_tmpfiles.py")[0].split("\n")
         if out: LOGGER.log("Errors during tmpfiles creation.\n\t%s" % "\n\t".join(out))
+        run("mount", "-t", "tmpfs", "tmpfs", "/dev/shm")
 
         # Start udev and event triggering
         start_udev()
