@@ -103,7 +103,7 @@ if __name__ == "__main__":
                     if i == "-": fields[n] = ""
                 if not fields[0] in ["c", "d", "D", "f", "F", "L", "w"]: errors.append("%s - wrong type in file: %s" % (fields[0], os.path.join(d, f)))
                 elif fields[0] == "L":
-                    if not fields[6]: errors.append("Wrong specified in file: %s" % os.path.join(d, f))
+                    if not fields[6]: errors.append("No arg for type 'L' specified in file: %s" % os.path.join(d, f))
                     elif not os.path.exists(fields[6]): errors.append("%s - wrong path in file: %s" % (fields[6], os.path.join(d, f)))
                 elif fields[0] in ["f", "F", "w"] and os.path.isdir(fields[1]): errors.append("Cannot write to file. %s is directory." % fields[1]) 
                 else:
