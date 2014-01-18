@@ -13,7 +13,7 @@ import shutil
 from pwd import getpwnam
 from grp import getgrnam
 
-DEFAULT_CONFIG_DIRS = ["/etc/tmpfiles.d", "/usr/lib/tmpfiles.d"]
+DEFAULT_CONFIG_DIRS = ["/etc/tmpfiles.d", "/run/tmpfiles.d", "/usr/lib/tmpfiles.d"]
 
 def read_file(path):
     with open(path) as f:
@@ -29,6 +29,9 @@ def create(type, path, mode, uid, gid, age, arg):
     elif type == "D":
         if os.path.isdir(path): shutil.rmtree(path)
         elif os.path.islink(path): os.remove(path)
+    elif type == "c":
+        arg = arg.split(":")
+        os.mknod(path, mode, os.makedev(arg[0], arg[1]))
     if type.lower() == "d":
         if not os.path.isdir(path): os.makedirs(path, mode)
         os.chown(path, uid, gid)
@@ -89,14 +92,18 @@ if __name__ == "__main__":
             for line in [l for l in conf.split("\n") if l and not (l.startswith("#") or l.isspace())]:
                 cerr = len(errors)
                 fields = line.split()
-                if len(fields) < 5: errors.append("%s is invalid .conf file. Not enough args in line: %s" % (os.path.join(d, f), line))
+                if len(fields) < 3: errors.append("%s is invalid .conf file. Not enough args in line: %s" % (os.path.join(d, f), line))
+                else: 
+                    if len(fields) < 4 or fields[3] == "-": fields[3] = "root"
+                    if len(fields) < 5 or fields[4] == "-": fields[4] = "root"
                 if len(fields) < 7: fields.extend(["",] * (7 - len(fields)))
                 elif len(fields) > 7: fields = fields[0:6] + [re.sub(".*?(%s)\s*$" % "\s+".join(fields[6:]), "\\1", line)]
+                if fields[0] == "c" and not re.search("\d+:\d+", fields[6]): errors.append("%s - wrong argument for type 'c' in file: %s" % (fields[6], os.path.join(d, f)))
                 for n, i in enumerate(fields):
                     if i == "-": fields[n] = ""
-                if not fields[0] in ["d", "D", "f", "F", "L", "w"]: errors.append("%s - wrong type in file: %s" % (fields[0], os.path.join(d, f)))
+                if not fields[0] in ["c", "d", "D", "f", "F", "L", "w"]: errors.append("%s - wrong type in file: %s" % (fields[0], os.path.join(d, f)))
                 elif fields[0] == "L":
-                    if not fields[6]: errors.append("Wro specified in file: %s" % os.path.join(d, f))
+                    if not fields[6]: errors.append("Wrong specified in file: %s" % os.path.join(d, f))
                     elif not os.path.exists(fields[6]): errors.append("%s - wrong path in file: %s" % (fields[6], os.path.join(d, f)))
                 elif fields[0] in ["f", "F", "w"] and os.path.isdir(fields[1]): errors.append("Cannot write to file. %s is directory." % fields[1]) 
                 else:
