@@ -1400,6 +1400,7 @@ def main():
         # Create tmpfiles
         UI.info(_("Creating tmpfiles"))
         if not os.path.isdir("/run/tmpfiles.d"): create_directory("/run/tmpfiles.d")
+        run_full("/usr/bin/kmod", "static-nodes", "--format=tmpfiles", "--output=/run/tmpfiles.d/kmod.conf")
         out = capture("/sbin/mudur_tmpfiles.py")[0].split("\n")
         if out: LOGGER.log("Errors during tmpfiles creation.\n\t%s" % "\n\t".join(out))
 
