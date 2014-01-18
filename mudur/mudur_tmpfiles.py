@@ -32,9 +32,9 @@ def create(type, path, mode, uid, gid, age, arg):
     elif type == "c":
         if not os.path.isdir(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
-        if not os.path.isfile(path):
-            arg = arg.split(":")
-            os.mknod(path, mode, os.makedev(arg[0], arg[1]))
+        if not os.path.exists(path):
+            dev = [int(x) for x in arg.split(":")]
+            os.mknod(path, mode, os.makedev(dev[0], dev[1]))
             os.chown(path, uid, gid)
     if type.lower() == "d":
         if not os.path.isdir(path): os.makedirs(path, mode)
@@ -97,14 +97,13 @@ if __name__ == "__main__":
                 cerr = len(errors)
                 fields = line.split()
                 if len(fields) < 3: errors.append("%s is invalid .conf file. Not enough args in line: %s" % (os.path.join(d, f), line))
-                else: 
-                    if len(fields) < 4 or fields[3] == "-": fields[3] = "root"
-                    if len(fields) < 5 or fields[4] == "-": fields[4] = "root"
                 if len(fields) < 7: fields.extend(["",] * (7 - len(fields)))
                 elif len(fields) > 7: fields = fields[0:6] + [re.sub(".*?(%s)\s*$" % "\s+".join(fields[6:]), "\\1", line)]
                 if fields[0] == "c" and not re.search("\d+:\d+", fields[6]): errors.append("%s - wrong argument for type 'c' in file: %s" % (fields[6], os.path.join(d, f)))
                 for n, i in enumerate(fields):
                     if i == "-": fields[n] = ""
+                if not fields[3]: fields[3] = "root"
+                if not fields[4]: fields[4] = "root"
                 if not fields[0] in ["c", "d", "D", "f", "F", "L", "w"]: errors.append("%s - wrong type in file: %s" % (fields[0], os.path.join(d, f)))
                 elif fields[0] == "L":
                     if not fields[6]: errors.append("No arg for type 'L' specified in file: %s" % os.path.join(d, f))
