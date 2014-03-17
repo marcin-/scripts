@@ -204,7 +204,7 @@ def remove_obsoleted_packages():
     """Removes obsoleted packages from the system."""
     # Use directly distributions.xml to not rely on available
     # repositories on the system.
-    dist = pisi.component.Distribution("%sdistribution.xml" % get_local_repository_url())
+    dist = pisi.component.Distribution("%s/distribution.xml" % get_local_repository_url())
     obsoletes = [obsolete.package for obsolete in dist.obsoletes]
 
     # Reduce the list so that already removed ones are excluded

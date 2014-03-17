@@ -35,8 +35,8 @@ The last 50 lines of the log before the error happens is as follows:
 %(message)s
 --------------------------------------------------------------------------
 
-Plain log file: http://farm.pisilinux.org/buildlogs/%(logsdir)s/%(logfilename)s.log
-Fancy log file: http://farm.pisilinux.org/buildlogs/%(logsdir)s/%(logfilename)s.html
+Plain log file: http://farm.pisilinux.org/farm-logs/%(logsdir)s/%(logfilename)s.log
+Fancy log file: http://farm.pisilinux.org/farm-logs/%(logsdir)s/%(logfilename)s.html
 
 --boundary42
 Content-Type: text/html;
@@ -63,9 +63,11 @@ The last 50 lines of the log before the error happens is as follows:
 
 <p>
 Plain log file:
-<a href="http://farm.pisilinux.org/buildlogs/%(logsdir)s/%(logfilename)s.log">http://farm.pisilinux.org/buildlogs%(logsdir)s/%(logfilename)s.log</a><br>
+<a 
+href="http://farm.pisilinux.org/farm-logs/%(logsdir)s/%(logfilename)s.log">http://farm.pisilinux.org/farm-logs%(logsdir)s/%(logfilename)s.log</a><br>
 Fancy log file:
-<a href="http://farm.pisilinux.org/buildlogs/%(logsdir)s/%(logfilename)s.html">http://farm.pisilinux.org/buildlogs%(logsdir)s/%(logfilename)s.html</a>
+<a 
+href="http://farm.pisilinux.org/farm-logs/%(logsdir)s/%(logfilename)s.html">http://farm.pisilinux.org/farm-logs%(logsdir)s/%(logfilename)s.html</a>
 </p>
 
 <br>
@@ -133,3 +135,4 @@ ALL =  {
          'info'      : INFO_MESSAGE,
          'check'      : CHECK_MESSAGE
        }
+

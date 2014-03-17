@@ -235,11 +235,21 @@ class RepositoryManager:
 # Main program
 
 if __name__ == "__main__":
+    options = {"d": False,    # switch to devel repository
+               }
+    args, options = utils.args_checker(sys.argv[1:], options)
 
     if conf.scm == "git":
         print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
         oldwd = os.getcwd()
         os.chdir(utils.get_local_git_repository_url())
+        process = subprocess.Popen(["git", "checkout", "stable" if optiond["d"] else "origin/master"],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        print process.communicate()[0]
+        if process.returncode != 0:
+            print "A problem with GIT occurred while switching branch, exiting."
+            sys.exit(process.returncode)
         process = subprocess.Popen(["git", "pull"],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)

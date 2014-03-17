@@ -64,7 +64,7 @@ def build_packages():
     logger.raw()
 
     pdb = PackageDB()
-    main_packages = pdb.list_packages(MAIN)
+    #main_packages = pdb.list_packages(MAIN)
 
     for line in queue:
         #utils.mount_tmpfs()
@@ -199,9 +199,9 @@ def build_packages():
 
     # Remove obsoleted packages
     #logger.info("Removing obsoleted packages, this may take a while..")
-    #removed_packages = utils.remove_obsoleted_packages()
-    #if removed_packages:
-        #logger.info("Removed the following obsoleted packages:\n%s" % "\n".join(removed_packages))
+    # removed_packages = utils.remove_obsoleted_packages()
+    # if removed_packages:
+    #    logger.info("Removed the following obsoleted packages:\n%s" % "\n".join(removed_packages))
 
     # Set index paths
     paths = [utils.get_compiled_packages_directory()]
@@ -225,7 +225,11 @@ def build_packages():
     # Check packages containing binaries and libraries broken by any package update
     print "\nChecking binary consistency with revdep-rebuild"
     os.environ["HOME"] = home_dir
-    os.system("/usr/bin/revdep-rebuild --force")
+    #os.system("/usr/bin/revdep-rebuild --force")
+    p = subprocess.Popen(["/usr/bin/revdep-rebuild", "--force"], stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    print "---\nout\n---%s---\n" % out
+    print "---\nerr\n---%s---\n" % err
 
 def move_packages(new_binary_packages, new_debug_packages, new_delta_packages):
 
