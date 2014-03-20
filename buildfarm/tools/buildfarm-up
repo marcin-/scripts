@@ -243,19 +243,20 @@ if __name__ == "__main__":
         print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
         oldwd = os.getcwd()
         os.chdir(utils.get_local_git_repository_url())
-        process = subprocess.Popen(["git", "checkout", "stable" if optiond["d"] else "origin/master"],
+        for b in [["origin", "master"], ["stable"]]:
+            process = subprocess.Popen(["git", "pull"] + b,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
+            print process.communicate()[0]
+            if process.returncode != 0:
+                print "A problem with GIT occurred while updating repository (%s), exiting." % " ".join(b)
+                sys.exit(process.returncode)
+        process = subprocess.Popen(["git", "checkout", "master" if optiond["d"] else "stable"],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
         print process.communicate()[0]
         if process.returncode != 0:
             print "A problem with GIT occurred while switching branch, exiting."
-            sys.exit(process.returncode)
-        process = subprocess.Popen(["git", "pull"],
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-        print process.communicate()[0]
-        if process.returncode != 0:
-            print "A problem with GIT occurred while updating repository, exiting."
             sys.exit(process.returncode)
         os.chdir(oldwd)
         um = UpdatesManager()
