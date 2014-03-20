@@ -251,7 +251,7 @@ if __name__ == "__main__":
             if process.returncode != 0:
                 print "A problem with GIT occurred while updating repository (%s), exiting." % " ".join(b)
                 sys.exit(process.returncode)
-        process = subprocess.Popen(["git", "checkout", "master" if optiond["d"] else "stable"],
+        process = subprocess.Popen(["git", "checkout", "master" if options["d"] else "stable"],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
         print process.communicate()[0]
