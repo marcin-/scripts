@@ -381,7 +381,7 @@ def index_workqueue(queue):
 def get_git_branch():
     if not os.path.isfile("%s/branch" % conf.workdir): return None
     with open("%s/branch" % conf.workdir, "r") as f:
-        return f.readline()
+        return f.readline().strip()
 
 def put_git_branch(branch):
     with open("%s/branch" % conf.workdir, "w") as f:
