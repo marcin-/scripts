@@ -93,11 +93,19 @@ def get_local_repository_url():
                             conf.release,
                             conf.subrepository)
     else:
+        branch = get_git_branch()
+        if branch:
+            return os.path.join(conf.repositorydir,
+                                branch)
         return os.path.join(conf.repositorydir,
                             conf.release)
 
 def get_local_git_repository_url():
     repo_name = conf.scmrepositoryurl.split("/").pop()[:-4]
+    branch = get_git_branch()
+    if branch:
+        return os.path.join(conf.repositorydir,
+                            "%s-%s" % (repo_name, branch))
     if repo_name == conf.release: repo_name += "-git"  # to avoid it will the same dir as get_local_repository_url()
     return os.path.join(conf.repositorydir,
                         repo_name)
@@ -286,9 +294,13 @@ def get_local_repo_pspecs():
     return sorted(isSpecFile(get_local_repository_url()))
 
 def get_path_repo_index():
+    branch = get_git_branch()
+    if branch: return "%s/pisi-repo-%s-index.xml" % (conf.workdir, branch)
     return "%s/pisi-repo-index.xml" % conf.workdir
 
 def get_path_work_index():
+    branch = get_git_branch()
+    if branch: return "%s/pisi-work-%s-index.xml" % (conf.workdir, branch)
     return "%s/pisi-work-index.xml" % conf.workdir
 
 def update_local_repo_index(get_list = False):
@@ -365,3 +377,12 @@ def index_workqueue(queue):
     indexfile = get_path_work_index()
     index.write(indexfile, sha1sum=False, compress=None, sign=None)
     print "Index file for work queue written to %s\n" % indexfile
+
+def get_git_branch():
+    if not os.path.isfile("%s/branch" % conf.workdir): return None
+    with open("%s/branch" % conf.workdir, "r") as f:
+        return f.readline()
+
+def put_git_branch(branch):
+    with open("%s/branch" % conf.workdir, "w") as f:
+        f.write(branch)

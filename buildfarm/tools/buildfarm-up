@@ -106,9 +106,11 @@ class UpdatesManager:
     
     def manage(self):
         print "Appending %s/waitqueue" % conf.workdir
+        if not os.path.exists("%s/waitqueue" % conf.workdir): open("%s/waitqueue" % conf.workdir, "w").close() 
         with open("%s/waitqueue" % conf.workdir) as f:
             self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
         print "Appending %s/workqueue" % conf.workdir
+        if not os.path.exists("%s/workqueue" % conf.workdir): open("%s/workqueue" % conf.workdir, "w").close()
         with open("%s/workqueue" % conf.workdir) as f:
             self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
 
@@ -243,20 +245,26 @@ if __name__ == "__main__":
         print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
         oldwd = os.getcwd()
         os.chdir(utils.get_local_git_repository_url())
-        for b in ["master", "stable"]:
-            process = subprocess.Popen(["git", "pull", "origin", b],
+
+        current_branch = utils.get_git_branch()
+        if not current_branch or not current_branch == "devel" if options["d"] else "stable":
+            utils.put_git_branch("devel" if options["d"] else "stable")
+            if not os.path.isdir(utils.get_local_repository_url()): os.makedirs(utils.get_local_repository_url())
+            process = subprocess.Popen(["git", "checkout", "master" if options["d"] else "stable"],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
             print process.communicate()[0]
             if process.returncode != 0:
-                print "A problem with GIT occurred while updating repository (%s), exiting." % b
+                print "A problem with GIT occurred while switching branch, exiting."
                 sys.exit(process.returncode)
-        process = subprocess.Popen(["git", "checkout", "master" if options["d"] else "stable"],
+
+        print current_branch, "devel" if options["d"] else "stable"
+        process = subprocess.Popen(["git", "pull"],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
         print process.communicate()[0]
         if process.returncode != 0:
-            print "A problem with GIT occurred while switching branch, exiting."
+            print "A problem with GIT occurred while updating repository, exiting."
             sys.exit(process.returncode)
         os.chdir(oldwd)
         um = UpdatesManager()
