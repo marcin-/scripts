@@ -242,14 +242,13 @@ if __name__ == "__main__":
     args, options = utils.args_checker(sys.argv[1:], options)
 
     if conf.scm == "git":
-        print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
         oldwd = os.getcwd()
-        os.chdir(utils.get_local_git_repository_url())
 
         current_branch = utils.get_git_branch()
         if not current_branch or not current_branch == "devel" if options["d"] else "stable":
             utils.put_git_branch("devel" if options["d"] else "stable")
             if not os.path.isdir(utils.get_local_repository_url()): os.makedirs(utils.get_local_repository_url())
+            os.chdir(utils.get_local_git_repository_url())            
             process = subprocess.Popen(["git", "checkout", "master" if options["d"] else "stable"],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
@@ -258,7 +257,8 @@ if __name__ == "__main__":
                 print "A problem with GIT occurred while switching branch, exiting."
                 sys.exit(process.returncode)
 
-        print current_branch, "devel" if options["d"] else "stable"
+        print "\nUpdating repository %s" % (utils.get_local_git_repository_url())
+        os.chdir(utils.get_local_git_repository_url())
         process = subprocess.Popen(["git", "pull"],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
