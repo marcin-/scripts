@@ -34,6 +34,7 @@ def check_config():
 
 def setup_repository():
     if conf.scm == "svn":
+        utils.create_directories()
         remote_url = utils.get_remote_repository_url()
         local_url  = utils.get_local_repository_url()
         if os.system("svn info %s &> /dev/null" % local_url) > 0:
@@ -46,7 +47,8 @@ def setup_repository():
     # git deposundan dosya indirme özelliği sadece github altında denenmiştir.
     if conf.scm == "git":
         for branch in ["devel", "stable"]:
-            utils.put_git_branch(branch) 
+            utils.put_git_branch(branch)
+            utils.create_directories() 
             remote_url = utils.get_remote_repository_url()
             local_url  = utils.get_local_repository_url()
             local_git  = utils.get_local_git_repository_url()
@@ -66,5 +68,4 @@ def setup_repository():
                    
 if __name__ == "__main__":
     if check_config():
-        utils.create_directories()
         setup_repository()
