@@ -57,7 +57,7 @@ def setup_repository():
                 if os.path.isdir(local_git): os.system("rm -Rf %s" % local_git)
                 os.chdir(os.path.dirname(local_git))
                 print "%s will be checked out into %s" % (remote_url, local_git)
-                os.system("git clone %s -b %s" % (remote_url, branch.replace("devel", "master")))
+                os.system("git clone %s -b %s %s" % (remote_url, branch.replace("devel", "master"), local_git))
                 os.system("rm -Rf %s/*" % local_url)
                 os.chdir(local_git)
                 os.system("cp -Rfp ./* %s" % local_url)
