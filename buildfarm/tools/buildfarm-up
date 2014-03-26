@@ -105,13 +105,15 @@ class UpdatesManager:
         return [os.path.join(self.local_url, f) for f in self.updated if f.endswith("/pspec.xml")]
     
     def manage(self):
-        print "Appending %s/waitqueue" % conf.workdir
-        if not os.path.exists("%s/waitqueue" % conf.workdir): open("%s/waitqueue" % conf.workdir, "w").close() 
-        with open("%s/waitqueue" % conf.workdir) as f:
+        workqueue_path = utils.workqueue_path()
+        waitqueue_path = utils.waitqueue_path()
+        print "Appending %s" % waitqueue_path
+        if not os.path.exists(waitqueue_path): open(waitqueue_path, "w").close() 
+        with open(waitqueue_path) as f:
             self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
-        print "Appending %s/workqueue" % conf.workdir
-        if not os.path.exists("%s/workqueue" % conf.workdir): open("%s/workqueue" % conf.workdir, "w").close()
-        with open("%s/workqueue" % conf.workdir) as f:
+        print "Appending %s" % workqueue_path
+        if not os.path.exists(workqueue_path): open(workqueue_path, "w").close()
+        with open(workqueue_path) as f:
             self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
 
         for pspec in self.final_queue[:]:
@@ -131,8 +133,8 @@ class UpdatesManager:
                 self.final_queue.remove(pspec)
                 #self.excluded_arch_packages.append(pspec)
 
-        print "Writing %s/workqueue" % conf.workdir
-        open("%s/workqueue" % conf.workdir, "w").write("\n".join(self.final_queue))
+        print "Writing %s" % workqueue_path
+        open(workqueue_path, "w").write("\n".join(self.final_queue))
         utils.clean_waitqueue()
 
         utils.index_workqueue(self.final_queue)

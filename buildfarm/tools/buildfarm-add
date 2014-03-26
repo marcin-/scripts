@@ -90,11 +90,11 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if not options["r"]:
-        print "Appending %s/waitqueue" % conf.workdir
-        with open("%s/waitqueue" % conf.workdir) as f:
+        print "Appending %s" % utils.waitqueue_path()
+        with open(utils.waitqueue_path()) as f:
             queue += [pspec for pspec in f.read().splitlines() if not pspec in queue]
-        print "Appending %s/workqueue" % conf.workdir
-        with open("%s/workqueue" % conf.workdir) as f:
+        print "Appending %s" % utils.workqueue_path()
+        with open(utils.workqueue_path()) as f:
             queue += [pspec for pspec in f.read().splitlines() if not pspec in queue]
 
     sys.stderr.write("Current queue:\n- ")
@@ -135,8 +135,8 @@ if __name__ == "__main__":
         print("\n".join(queue))
         sys.exit(0)
     else:
-        print "Writing %s/workqueue" % conf.workdir
-        open("%s/workqueue" % conf.workdir, "w").write("\n".join(queue))
+        print "Writing %s" % utils.workqueue_path()
+        open(utils.workqueue_path(), "w").write("\n".join(queue))
         utils.clean_waitqueue()
 
         utils.index_workqueue(queue)

@@ -236,11 +236,36 @@ def is_debug_package(pkg):
     package_name = get_package_name(pkg)
     return package_name.endswith(ctx.const.debug_name_suffix)
 
+def branch_path():
+    path = "%s/branch" % conf.workdir
+    if not os.path.isfile(path):
+        print "%s/branch not found" % conf.workdir
+        sys.exit(1)
+    return path
+
+def get_git_branch():
+    with open(branch_path(), "r") as f:
+        return f.readline().strip()
+
+def put_git_branch(branch):
+    with open(branch_path(), "w") as f:
+        f.write(branch)
+
+def workqueue_path():
+    path = os.path.join(conf.workdir, "workqueue-%s" % get_git_branch())
+    if not os.path.exists(path): open(path, "w").close()
+    return path
+
+def waitqueue_path():
+    path = os.path.join(conf.workdir, "waitqueue-%s" % get_git_branch())
+    if not os.path.exists(path): open(path, "w").close()
+    return path
+
 def clean_waitqueue():
-    open("%s/waitqueue" % conf.workdir, "w")
+    open(waitqueue_path(), "w").close()
 
 def clean_workqueue():
-    open("%s/workqueue" % conf.workdir, "w")
+    open(workqueue_path(), "w").close()
 
 class Index(xmlfile.XmlFile):
     __metaclass__ = autoxml.autoxml
@@ -377,12 +402,3 @@ def index_workqueue(queue):
     indexfile = get_path_work_index()
     index.write(indexfile, sha1sum=False, compress=None, sign=None)
     print "Index file for work queue written to %s\n" % indexfile
-
-def get_git_branch():
-    if not os.path.isfile("%s/branch" % conf.workdir): return None
-    with open("%s/branch" % conf.workdir, "r") as f:
-        return f.readline().strip()
-
-def put_git_branch(branch):
-    with open("%s/branch" % conf.workdir, "w") as f:
-        f.write(branch)
