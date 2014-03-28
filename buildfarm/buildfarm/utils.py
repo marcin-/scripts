@@ -228,8 +228,8 @@ def is_debug_package(pkg):
     package_name = get_package_name(pkg)
     return package_name.endswith(ctx.const.debug_name_suffix)
 
-def workqueue_path():
-    path = os.path.join(conf.workdir, "workqueue")
+def workqueue_path(release=False):
+    path = os.path.join(conf.workdir, "workqueue%s" % "-release" if release else "")
     if not os.path.exists(path): open(path, "w").close()
     return path
 
@@ -375,3 +375,16 @@ def index_workqueue(queue):
     indexfile = get_path_work_index()
     index.write(indexfile, sha1sum=False, compress=None, sign=None)
     print "Index file for work queue written to %s\n" % indexfile
+
+def get_norelease_list():
+    pkgs = []
+    try:
+        pkg_list = open("/etc/buildfarm/no-r.list", "r")
+    except IOError:
+        pass
+    else:
+        for line in pkg_list.readlines():
+            line = line.strip()
+            if line and not line.startswith("#"): pkgs.append(line)
+
+    return pkgs

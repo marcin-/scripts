@@ -21,14 +21,14 @@ from buildfarm.circledepfinder import SourceDB
 # PiSi module to get pspec path from package name using component name
 from pisi.db.installdb import InstallDB
 
-class QueueManager:
-    def __init__(self, rdresolv = True, resolv = True):
+class QueueManager():
+    def __init__(self, rdresolv = True, resolv = True, release=False):
         self.rdresolv = rdresolv
 
         self.workQueue = []
         self.waitQueue = []
 
-        self.workQueueFilePath = utils.workqueue_path()
+        self.workQueueFilePath = utils.workqueue_path(release)
         self.waitQueueFilePath = utils.waitqueue_path()
 
         self.__deserialize(self.workQueue, self.workQueueFilePath)

@@ -106,14 +106,16 @@ class UpdatesManager:
     
     def manage(self):
         workqueue_path = utils.workqueue_path()
+        workqueue_release_path = utils.workqueue_path(release = True)
         waitqueue_path = utils.waitqueue_path()
         print "Appending %s" % waitqueue_path
-        if not os.path.exists(waitqueue_path): open(waitqueue_path, "w").close() 
         with open(waitqueue_path) as f:
             self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
         print "Appending %s" % workqueue_path
-        if not os.path.exists(workqueue_path): open(workqueue_path, "w").close()
         with open(workqueue_path) as f:
+            self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
+        print "Appending %s" % workqueue_release_path
+        with open(workqueue_release_path) as f:
             self.final_queue.extend([pspec for pspec in f.read().splitlines() if not pspec in self.final_queue])
 
         for pspec in self.final_queue[:]:
@@ -133,8 +135,11 @@ class UpdatesManager:
                 self.final_queue.remove(pspec)
                 #self.excluded_arch_packages.append(pspec)
 
+        norelease = utils.get_norelease.list()
         print "Writing %s" % workqueue_path
-        open(workqueue_path, "w").write("\n".join(self.final_queue))
+        open(workqueue_path, "w").write("\n".join([i for i in self.final_queue if i.split("/")[-2] not in norelease]))
+        print "Writing %s" % workqueue_release_path
+        open(workqueue_release_path, "w").write("\n".join([i for i in self.final_queue if i.split("/")[-2] in norelease]))
         utils.clean_waitqueue()
 
         utils.index_workqueue(self.final_queue)

@@ -34,5 +34,5 @@ setup(name="buildfarm",
       platforms=["Linux"],
       packages=["buildfarm"],
       scripts=TOOLS,
-      data_files=[("/etc/buildfarm", ["data/buildfarm.conf", "data/auth.conf", "data/circle.conf"]),
+      data_files=[("/etc/buildfarm", ["data/buildfarm.conf", "data/auth.conf", "data/circle.conf", "data/no-r.list"]),
                    ("/etc/buildfarm/hooks.d", HOOKS)])

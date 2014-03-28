@@ -28,7 +28,8 @@ ADD = {
 
 RUN = {
                 "-b": "resolv build deps only",
-                "-f": "force to overwrite packages"
+                "-f": "force to overwrite packages",
+                "-r": "use workqueue-release"
        }
 
 def print_help (commands):

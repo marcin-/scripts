@@ -37,7 +37,7 @@ def build_packages():
     if not os.path.exists(os.path.join(utils.get_package_log_directory(), "check")):
         os.makedirs(os.path.join(utils.get_package_log_directory(), "check"))
 
-    qmgr = queuemanager.QueueManager(rdresolv = not options["b"])
+    qmgr = queuemanager.QueueManager(rdresolv = not options["b"], release = options["r"])
 
     qmgr.transfer_all_packages_to_work_queue()
     queue = copy.copy(qmgr.get_work_queue())
@@ -279,7 +279,8 @@ def handle_exception(exception, value, trace_back):
 
 if __name__ == "__main__":
     options = {"b": False,    # resolv build deps only
-               "f": False     # force to overwrite packages
+               "f": False,    # force to overwrite packages
+               "r": False     # use workqueue-release instead workqueue
                }
     args, options = utils.args_checker(sys.argv[1:], options)
 
