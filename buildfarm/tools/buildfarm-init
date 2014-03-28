@@ -46,25 +46,23 @@ def setup_repository():
 
     # git deposundan dosya indirme özelliği sadece github altında denenmiştir.
     if conf.scm == "git":
-        for branch in ["devel", "stable"]:
-            utils.put_git_branch(branch)
-            utils.create_directories() 
-            remote_url = utils.get_remote_repository_url()
-            local_url  = utils.get_local_repository_url()
-            local_git  = utils.get_local_git_repository_url()
-            if os.path.isdir("%s/.git" % local_git):
-                print "%s/.git already exists." % local_git
-            else:
-                oldwd = os.getcwd()
-                if os.path.isdir(local_git): os.system("rm -Rf %s" % local_git)
-                os.chdir(os.path.dirname(local_git))
-                print "%s will be checked out into %s" % (remote_url, local_git)
-                os.system("git clone %s -b %s %s" % (remote_url, branch.replace("devel", "master"), local_git))
-                os.system("rm -Rf %s/*" % local_url)
-                os.chdir(local_git)
-                os.system("cp -Rfp ./* %s" % local_url)
-                os.system("rm -Rf %s/.git" % local_url)
-                os.chdir(oldwd)
+        utils.create_directories() 
+        remote_url = utils.get_remote_repository_url()
+        local_url  = utils.get_local_repository_url()
+        local_git  = utils.get_local_git_repository_url()
+        if os.path.isdir("%s/.git" % local_git):
+            print "%s/.git already exists." % local_git
+        else:
+            oldwd = os.getcwd()
+            if os.path.isdir(local_git): os.system("rm -Rf %s" % local_git)
+            os.chdir(os.path.dirname(local_git))
+            print "%s will be checked out into %s" % (remote_url, local_git)
+            os.system("git clone %s %s" % (remote_url, local_git))
+            os.system("rm -Rf %s/*" % local_url)
+            os.chdir(local_git)
+            os.system("cp -Rfp ./* %s" % local_url)
+            os.system("rm -Rf %s/.git" % local_url)
+            os.chdir(oldwd)
                    
 if __name__ == "__main__":
     if check_config():

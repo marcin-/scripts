@@ -92,20 +92,9 @@ def get_local_repository_url():
         return os.path.join(conf.repositorydir,
                             conf.release,
                             conf.subrepository)
-    else:
-        branch = get_git_branch()
-        if branch:
-            return os.path.join(conf.repositorydir,
-                                branch)
-        return os.path.join(conf.repositorydir,
-                            conf.release)
 
 def get_local_git_repository_url():
     repo_name = conf.scmrepositoryurl.split("/").pop()[:-4]
-    branch = get_git_branch()
-    if branch:
-        return os.path.join(conf.repositorydir,
-                            "%s-%s" % (repo_name, branch))
     if repo_name == conf.release: repo_name += "-git"  # to avoid it will the same dir as get_local_repository_url()
     return os.path.join(conf.repositorydir,
                         repo_name)
@@ -236,28 +225,13 @@ def is_debug_package(pkg):
     package_name = get_package_name(pkg)
     return package_name.endswith(ctx.const.debug_name_suffix)
 
-def branch_path():
-    path = "%s/branch" % conf.workdir
-    if not os.path.isfile(path):
-        print "%s/branch not found" % conf.workdir
-        sys.exit(1)
-    return path
-
-def get_git_branch():
-    with open(branch_path(), "r") as f:
-        return f.readline().strip()
-
-def put_git_branch(branch):
-    with open(branch_path(), "w") as f:
-        f.write(branch)
-
 def workqueue_path():
-    path = os.path.join(conf.workdir, "workqueue-%s" % get_git_branch())
+    path = os.path.join(conf.workdir, "workqueue")
     if not os.path.exists(path): open(path, "w").close()
     return path
 
 def waitqueue_path():
-    path = os.path.join(conf.workdir, "waitqueue-%s" % get_git_branch())
+    path = os.path.join(conf.workdir, "waitqueue")
     if not os.path.exists(path): open(path, "w").close()
     return path
 
@@ -319,13 +293,9 @@ def get_local_repo_pspecs():
     return sorted(isSpecFile(get_local_repository_url()))
 
 def get_path_repo_index():
-    branch = get_git_branch()
-    if branch: return "%s/pisi-repo-%s-index.xml" % (conf.workdir, branch)
     return "%s/pisi-repo-index.xml" % conf.workdir
 
 def get_path_work_index():
-    branch = get_git_branch()
-    if branch: return "%s/pisi-work-%s-index.xml" % (conf.workdir, branch)
     return "%s/pisi-work-index.xml" % conf.workdir
 
 def update_local_repo_index(get_list = False):

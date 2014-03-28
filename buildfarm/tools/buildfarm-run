@@ -267,7 +267,6 @@ def move_packages(new_binary_packages, new_debug_packages, new_delta_packages):
         for pkg in new_delta_packages[package]:
             move_package(pkg, utils.get_compiled_debug_packages_directory())
 
-
 ### Entry point ###
 
 def handle_exception(exception, value, trace_back):

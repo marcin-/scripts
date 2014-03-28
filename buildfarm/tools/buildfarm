@@ -15,10 +15,6 @@ COMMANDS = {
                            "clean": "cleans specified waitqueue and/or workqueue files"
            }
 
-UP =  {
-                "-d": "devel branch"
-      }
-
 ADD = {
                 "-r": "reset queues", 
                 "-w": "write to work queue",
