@@ -388,3 +388,9 @@ def get_norelease_list():
             if line and not line.startswith("#"): pkgs.append(line)
 
     return pkgs
+
+def split_workqueue(queue):
+    norelease = get_norelease_list()
+    workqueue = [i for i in queue if i.split("/")[-2] in norelease]
+    workqueue_release = [i for i in queue if i.split("/")[-2] not in norelease]
+    return workqueue, workqueue_release
