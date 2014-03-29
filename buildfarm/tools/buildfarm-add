@@ -96,6 +96,9 @@ if __name__ == "__main__":
         print "Appending %s" % utils.workqueue_path()
         with open(utils.workqueue_path()) as f:
             queue += [pspec for pspec in f.read().splitlines() if not pspec in queue]
+        print "Appending %s" % utils.workqueue_path(release=True)
+        with open(utils.workqueue_path(release=True)) as f:
+            queue += [pspec for pspec in f.read().splitlines() if not pspec in queue]
 
     sys.stderr.write("Current queue:\n- ")
     sys.stderr.write("\n- ".join(queue))
@@ -135,8 +138,12 @@ if __name__ == "__main__":
         print("\n".join(queue))
         sys.exit(0)
     else:
+        workqueue, workqueue_release = utils.split_workqueue(queue) 
         print "Writing %s" % utils.workqueue_path()
-        open(utils.workqueue_path(), "w").write("\n".join(queue))
+        open(utils.workqueue_path(), "w").write("\n".join(workqueue))
+        print "Writing %s" % utils.workqueue_path(release=True)
+        open(utils.workqueue_path(release=True), "w").write("\n".join(workqueue_release))
         utils.clean_waitqueue()
 
-        utils.index_workqueue(queue)
+        utils.index_workqueue(workqueue)
+        utils.index_workqueue(workqueue_release, release=True)

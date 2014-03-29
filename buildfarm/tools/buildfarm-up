@@ -135,12 +135,10 @@ class UpdatesManager:
                 self.final_queue.remove(pspec)
                 #self.excluded_arch_packages.append(pspec)
 
-        norelease = utils.get_norelease_list()
+        workqueue, workqueue_release = utils.split_workqueue(self.final_queue)
         print "Writing %s" % workqueue_path
-        workqueue = [i for i in self.final_queue if i.split("/")[-2] in norelease]
         open(workqueue_path, "w").write("\n".join(workqueue))
         print "Writing %s" % workqueue_release_path
-        workqueue_release = [i for i in self.final_queue if i.split("/")[-2] not in norelease]
         open(workqueue_release_path, "w").write("\n".join(workqueue_release))
         utils.clean_waitqueue()
 
