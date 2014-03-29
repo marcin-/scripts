@@ -229,7 +229,7 @@ def is_debug_package(pkg):
     return package_name.endswith(ctx.const.debug_name_suffix)
 
 def workqueue_path(release=False):
-    path = os.path.join(conf.workdir, "workqueue%s" % "-release" if release else "")
+    path = os.path.join(conf.workdir, "workqueue-release" if release else "workqueue")
     if not os.path.exists(path): open(path, "w").close()
     return path
 
