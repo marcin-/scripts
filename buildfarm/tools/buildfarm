@@ -6,7 +6,7 @@ import subprocess
 
 COMMANDS = {
                            "init": "Initializes a new buildfarm environment",
-                           "up": "Checks out the repository from remote SCM#",
+                           "up": "Checks out the repository from remote SCM",
                            "missing": "Dumps the packages which has releases not built yet",
                            "circle": "Checks circle dependencies",
                            "--version": "Prints the version\n",
