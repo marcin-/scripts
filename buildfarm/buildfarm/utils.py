@@ -298,8 +298,8 @@ def get_local_repo_pspecs():
 def get_path_repo_index():
     return "%s/pisi-repo-index.xml" % conf.workdir
 
-def get_path_work_index():
-    return "%s/pisi-work-index.xml" % conf.workdir
+def get_path_work_index(release=False):
+    return "%s/pisi-work-release-index.xml" % conf.workdir if release else "%s/pisi-work-index.xml" % conf.workdir
 
 def update_local_repo_index(get_list = False):
     print "Indexing local repo ..."
@@ -367,12 +367,12 @@ def args_checker(args, options):
 
     return args, options
 
-def index_workqueue(queue):
+def index_workqueue(queue, release=False):
     print "Indexing work queue ..."
     index = Index()
     index.distribution = None
     index.index(queue)    
-    indexfile = get_path_work_index()
+    indexfile = get_path_work_index(release)
     index.write(indexfile, sha1sum=False, compress=None, sign=None)
     print "Index file for work queue written to %s\n" % indexfile
 

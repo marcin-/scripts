@@ -137,12 +137,15 @@ class UpdatesManager:
 
         norelease = utils.get_norelease_list()
         print "Writing %s" % workqueue_path
-        open(workqueue_path, "w").write("\n".join([i for i in self.final_queue if i.split("/")[-2] not in norelease]))
+        workqueue = [i for i in self.final_queue if i.split("/")[-2] in norelease]
+        open(workqueue_path, "w").write("\n".join(workqueue))
         print "Writing %s" % workqueue_release_path
-        open(workqueue_release_path, "w").write("\n".join([i for i in self.final_queue if i.split("/")[-2] in norelease]))
+        workqueue_release = [i for i in self.final_queue if i.split("/")[-2] not in norelease]
+        open(workqueue_release_path, "w").write("\n".join(workqueue_release))
         utils.clean_waitqueue()
 
-        utils.index_workqueue(self.final_queue)
+        utils.index_workqueue(workqueue)
+        utils.index_workqueue(workqueue_release, release = True)
 
 class RepositoryManager:
     def __init__(self):
