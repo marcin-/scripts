@@ -17,6 +17,10 @@ wsbgn = re.compile("^(\s*)")
 wsend = re.compile("(\s*)$")
 bgntag = re.compile(".*?<([^!\/\s>]+)[\s>].*")
 endtag = re.compile(".*?<\/(\w+?)>.*")
+bgndep = re.compile("<(Runtime|Build)Dependencies>")
+enddep = re.compile("<\/(Runtime|Build)Dependencies>")
+depvr = re.compile(".*Dependency([^<]+)<\/.*")
+dep = re.compile(".*>([^<]+)<\/.*")
 
 def remove_wsbgn(data):
     return re.sub(wsbgn, "", data)
@@ -64,13 +68,20 @@ def getch():
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
     return ch
 
+def len_sorted(a, vr=True):
+    d = {}
+    for i in a: d[i] = len(re.sub(depvr if vr else dep, "\\1", i))
+    return [i[0] for i in sorted(d.items(), key=lambda x:x[1])]
+
 if __name__ == '__main__':
     usage = "Usage: %prog [options] [PATH]"
     parser = OptionParser(usage)
     parser.add_option("-d", "--show-diff", action="store_true", dest="diff", help="show differences")
     parser.add_option("-n", "--no-write", action="store_true", dest="nowrite", help="don't write changes")
     parser.add_option("-r", "--recursive", action="store_true", dest="recursive", help="turn on recursive search for pisi xml files")
-    parser.add_option("-s", "--sort", action="store_true", dest="sort", help="sort files list before fixing")
+    parser.add_option("-s", "--sort", action="store_true", dest="sort", help="sort build and runtime dependencies")
+    parser.add_option("-l", "--sortlen", action="store_true", dest="sortlen", help="sort by lenght build and runtime dependencies")
+    parser.add_option("-L", "--sortlenvr", action="store_true", dest="sortlenvr", help="sort by lenght build and runtime dependencies (with dependency arg)")
     parser.add_option("-y", "--yes-all", action="store_true", dest="yesall", help="yes to all")
     (options,args) = parser.parse_args()
     try:
@@ -89,7 +100,7 @@ if __name__ == '__main__':
         for f in pisifiles:
             if f in os.walk(startpath).next()[2]: plist.append("%s/%s" % (startpath, f))
 
-    if options.sort: plist = sorted(plist)
+    plist = sorted(plist)
 
     for f in plist:
         orig_file = read_file(f)
@@ -111,10 +122,26 @@ if __name__ == '__main__':
             else: 
                 if end_tag(line): i = i - 1
                 new_file.append(line)
+        
+        sorted_file = []
         if not i == 0: 
             print i, f
             sys.exit(1)
-        new_file = "\n".join(new_file)
+        elif options.sort or options.sortlen or options.sortlenvr:
+            append_deps = False
+            deps = []
+            for l in new_file:
+                if re.search(bgndep, l): append_deps = True
+                elif re.search(enddep, l):
+                    sorted_file.append(deps[0])
+                    if options.sortlen: sorted_file.extend(len_sorted(deps[1:], vr=False))
+                    elif options.sortlenvr: sorted_file.extend(len_sorted(deps[1:], vr=True))
+                    else: sorted_file.extend(sorted(deps[1:]))
+                    append_deps = False
+                    deps = []
+                if append_deps: deps.append(l)
+                else: sorted_file.append(l)
+        new_file = "\n".join(sorted_file if sorted_file else new_file)
         print "fixing %s file" % f
         if options.diff:
             write_file("/tmp/file.orig", orig_file)
