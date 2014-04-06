@@ -154,7 +154,6 @@ if __name__ == '__main__':
                             new_file.append("%s%s \\" % (" " * (len(firstline) + (1 if not p.startswith(" ") else 0)), p))
                         new_file.append(" " * len(firstline) + lastline)
                 else: new_file.append(line)
-            if new_file[-1]: new_file.append("")
             write_new_file("\n".join(new_file), orig_file)
             print "fixing %s file" % f
             if options.diff:
