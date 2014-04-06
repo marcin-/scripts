@@ -140,7 +140,7 @@ def bump(options, path):
     return specfile.source.name
 
 if __name__ == "__main__":
-    ver_ext_pattern = re.compile("^.+?-[\D^\-]*?([\d\.]+\d)[\D^\.]*?\.([\w\.]+)$")
+    ver_ext_pattern = re.compile("^.+?-[\D^\-]*?([\d\._]+\d)[\D^\.]*?\.([\w\.]+)$")
     types = ["targz", "tarbz2", "tarlzma", "tarxz", "tarZ", "tar", "zip", "gz", "gzip", "bz2", "bzip2", "lzma", "xz"]
 
     usage = "Usage: %prog [options] [PATH]"
