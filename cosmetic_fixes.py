@@ -9,7 +9,7 @@ import fcntl
 import termios
 
 startpath = "./"
-pisifiles = ("pspec.xml",
+pisifilesxml = ("pspec.xml",
              "translations.xml")
 
 tab = " " * 4
@@ -21,6 +21,9 @@ bgndep = re.compile("<(Runtime|Build)Dependencies>")
 enddep = re.compile("<\/(Runtime|Build)Dependencies>")
 depvr = re.compile(".*Dependency([^<]+)<\/.*")
 dep = re.compile(".*>([^<]+)<\/.*")
+bgncfg = re.compile("^(\s+\w+\.(raw)?[cC]onfigure\([\'\"])(.*)")
+endcfg = re.compile("\s+(\S*)\s*?([\'\"\)]?.*\)\s*)$")
+pline = re.compile("(\s*)(.+?)(\s*\\\s*)$")
 
 def remove_wsbgn(data):
     return re.sub(wsbgn, "", data)
@@ -73,12 +76,27 @@ def len_sorted(a, vr=True):
     for i in a: d[i] = len(re.sub(depvr if vr else dep, "\\1", i))
     return [i[0] for i in sorted(d.items(), key=lambda x:x[1])]
 
+def write_new_file(new_file, old_file):
+    ch = ''
+    if not options.nowrite and not old_file == new_file:
+        if not options.yesall:
+            print "Write changes? [Y/n]"
+            while not (ch == 'y' or ch == 'n' or ch == '\n'):
+                ch = getch()
+            if ch == "\n": ch = 'y'
+            print ch
+        if ch == 'y'or options.yesall: write_file(f, new_file)
+    elif not options.yesall:
+        print "press a key"
+        ch = getch()
+
 if __name__ == '__main__':
     usage = "Usage: %prog [options] [PATH]"
     parser = OptionParser(usage)
     parser.add_option("-d", "--show-diff", action="store_true", dest="diff", help="show differences")
     parser.add_option("-n", "--no-write", action="store_true", dest="nowrite", help="don't write changes")
     parser.add_option("-r", "--recursive", action="store_true", dest="recursive", help="turn on recursive search for pisi xml files")
+    parser.add_option("-a", "--clean-actions", action="store_true", dest="actions", help="clean actions.py")
     parser.add_option("-s", "--sort", action="store_true", dest="sort", help="sort build and runtime dependencies")
     parser.add_option("-l", "--sortlen", action="store_true", dest="sortlen", help="sort by lenght build and runtime dependencies")
     parser.add_option("-L", "--sortlenvr", action="store_true", dest="sortlenvr", help="sort by lenght build and runtime dependencies (with dependency arg)")
@@ -90,19 +108,61 @@ if __name__ == '__main__':
         print "%s will be used as start path" % startpath
     if startpath.endswith("/"): startpath = startpath[:-1]
 
-    plist = []
+    pxlist = []
+    palist = []
 
     if options.recursive:
         for root, dirs, files in os.walk(startpath):
-            for f in pisifiles:
-                if f in files: plist.append("%s/%s" % (root, f))
+            for f in pisifilesxml:
+                if f in files: pxlist.append("%s/%s" % (root, f))
+                elif f == "actions.py": palist.append("%s/%s" % (root, f))
     else:
-        for f in pisifiles:
-            if f in os.walk(startpath).next()[2]: plist.append("%s/%s" % (startpath, f))
+        if os.path.isfile("%s/actions.py" % startpath): palist.append("%s/actions.py" % startpath)
+        for f in pisifilesxml:
+            if f in os.walk(startpath).next()[2]: pxlist.append("%s/%s" % (startpath, f))
 
-    plist = sorted(plist)
+    pxlist = sorted(pxlist)
+    palist = sorted(palist)
 
-    for f in plist:
+    if options.actions:
+        for f in palist:
+            orig_file = read_file(f)
+            new_file = []
+            params = []
+            append_param = False
+            firstline = ""
+            lastline = "" 
+            for line in orig_file.split("\n"):
+                if line.isspace(): line = ""
+                if re.search(bgncfg, line) and not re.search(endcfg, line):
+                    firstline = re.sub(bgncfg, "\\1", line)
+                    params.append(re.sub(pline, "\\2", re.sub(bgncfg, "\\3", line)))
+                    append_param = True
+                elif append_param:
+                    if re.search(endcfg, line):
+                        append_param = False
+                        if re.sub(endcfg, "\\1", line): params.append(re.sub(endcfg, "\\1", line))
+                        lastline = re.sub(endcfg, "\\2", line)
+                    else:
+                        params.append(re.sub(pline, "\\2", line))
+                    if not append_param:
+                        if params[-1][-1].endswith(firstline[-1]):
+                            lastline = params[-1][-1] + lastline 
+                            params[-1] = params[-1][:-1]
+                        new_file.append(firstline + " \\")
+                        for p in sorted([" " + i if "/" in i else i for i in params]):
+                            new_file.append("%s%s \\" % (" " * (len(firstline) + (1 if not p.startswith(" ") else 0)), p))
+                        new_file.append(" " * len(firstline) + lastline)
+                else: new_file.append(line)
+            if new_file[-1]: new_file.append("")
+            write_new_file("\n".join(new_file), orig_file)
+            print "fixing %s file" % f
+            if options.diff:
+                write_file("/tmp/file.orig", orig_file)
+                write_file("/tmp/file.new", new_file)
+                os.system("diff -usa /tmp/file.orig /tmp/file.new")
+
+    for f in pxlist:
         orig_file = read_file(f)
         new_file = []
         i = 0
@@ -147,15 +207,4 @@ if __name__ == '__main__':
             write_file("/tmp/file.orig", orig_file)
             write_file("/tmp/file.new", new_file)
             os.system("diff -usa /tmp/file.orig /tmp/file.new")
-        ch = ''
-        if not options.nowrite and not orig_file == new_file:
-            if not options.yesall:
-                print "Write changes? [Y/n]"
-                while not (ch == 'y' or ch == 'n' or ch == '\n'):
-                    ch = getch()
-                if ch == "\n": ch = 'y'
-                print ch
-            if ch == 'y'or options.yesall: write_file(f, new_file)
-        elif not options.yesall:
-            print "press a key"
-            ch = getch()
+        write_new_file(new_file, orig_file)
