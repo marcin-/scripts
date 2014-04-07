@@ -151,8 +151,8 @@ if __name__ == '__main__':
                             params[-1] = params[-1][:-1]
                         new_file.append(firstline + "\\")
                         for p in sorted([" " + i if "/" in i else i for i in params]):
-                            if not p or p.isspace(): continue
-                            new_file.append("%s%s \\" % (" " * (len(firstline) + (1 if not p.startswith(" ") else 0)), p))
+                            if not p.replace("\\", "") or p.isspace(): continue
+                            new_file.append("%s%s \\" % (" " * (len(firstline) - (0 if not p.startswith(" ") else 1)), p))
                         new_file.append(" " * (len(firstline) - 1) + lastline)
                 else: new_file.append(line)
             write_new_file("\n".join(new_file), orig_file)
