@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import time
-import sys
 import os
 import re
+import sys
+import time
 from optparse import OptionParser
 from pisi.specfile import SpecFile
 
@@ -99,7 +99,8 @@ def bump(options, path):
     info["VERSION"] = new_version
     new_release = RELEASE % info
     new_pspec = ''
-    if not new_type in types: new_type = "binary"
+    if new_type == "tgz": new_type = "targz"
+    elif not new_type in types: new_type = "binary"
 
     for line in pspec.split("\n"):
         if "<Archive" in line and old_archive in line:
