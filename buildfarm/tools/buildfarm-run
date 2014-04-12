@@ -66,13 +66,13 @@ def build_packages():
     pdb = PackageDB()
     #main_packages = pdb.list_packages(MAIN)
 
-    for line in queue:
+    for qline in queue:
         #utils.mount_tmpfs()
         remove_checkfile = True
 
-        circle = False if len(line.split()) == 1 else True
+        circle = False if len(qline.split()) == 1 else True
         for pass_ in range (1 if circle else 2, 3):
-            for pspec in line.split():                
+            for pspec in qline.split():
                 package_name = utils.get_package_name_from_path(pspec)
                 package_name_with_component = utils.get_package_component_path(pspec)
                 logfile = os.path.join(utils.get_package_log_directory(),
@@ -103,8 +103,8 @@ def build_packages():
                 logger.raw()
         
                 log_msg = "Building %s (%d%s/%d)%s" % (package_name,
-                                                       int(queue.index(pspec)+1) if not circle else int(queue.index(line)+1),
-                                                       chr(range( ord('a'), ord('z') + 1)[line.split().index(pspec)]) if circle else "",
+                                                       int(queue.index(qline)+1) if circle else int(queue.index(pspec)+1),
+                                                       chr(range( ord('a'), ord('z') + 1)[qline.split().index(pspec)]) if circle else "",
                                                        len(queue),
                                                        " pass %d" % pass_ if circle else "")
                 logger.info(log_msg)
@@ -146,7 +146,7 @@ def build_packages():
                     if not pass_ == 1:
                         if not circle: qmgr.removeFromWorkQueue(pspec)
                         else:
-                            if line.endswith(pspec): qmgr.removeFromWorkQueue(line)
+                            if qline.endswith(pspec): qmgr.removeFromWorkQueue(qline)
                         move_packages(new_binary_packages, new_debug_packages, new_delta_packages)
                         package_list += [os.path.basename(pkg) for pkg in new_binary_packages]
 
@@ -167,14 +167,14 @@ def build_packages():
                             else:
                                 missing = []
                                 missing_index = -1
-                                for line in out.split("\n"):
+                                for chline in out.split("\n"):
                                     if not missing_index == -1:
-                                        if not "---" in line:
-                                            missing_dep = line[missing_index:].strip() 
+                                        if not "---" in chline:
+                                            missing_dep = chline[missing_index:].strip() 
                                             if missing_dep and not missing_dep.startswith("glibc"):
                                                 missing.append(missing_dep)
                                         continue 
-                                    missing_index = line.find("Missing dependencies")
+                                    missing_index = chline.find("Missing dependencies")
                                 if missing:
                                     mailer.check("<BR>".join(out.split("\n")), pspec, "checkelf output for %s" % name)
                                     logger.info("Missing dependencies: %s" % ",".join(missing))
