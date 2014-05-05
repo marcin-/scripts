@@ -36,6 +36,7 @@ if __name__ == "__main__":
     parser.add_option("-n", "--soname", action="store_true", default=None, help="recompile packages using library with SONAME instead of broken library \
                                                                             (SONAME providing library must be present in the system)")
     parser.add_option("-e", "--soname-regexp", action="store_true", default=None, help="the same as --soname, but accepts regular expresions")
+    parser.add_option("-p", "--package", action="store_true", default=None, help="shows all reverse deps for PACKAGE (PACKAGE must be installed in the system)")
     (options, args) = parser.parse_args()
 
     glob_paths = []
@@ -54,13 +55,42 @@ if __name__ == "__main__":
     if options.force:
         for f in  glob.glob("%s/.revdep-rebuild*" % os.environ["HOME"]): os.remove(f)
 
-    if not options.soname and not options.soname_regexp:
+    if not options.soname and not options.soname_regexp and not options.package:
         search_broken = True
     elif options.soname and options.soname_regexp:
         print "%suse --soname and --soname-regexp separately%s" % (RD, NO)
         sys.exit(1)
+    elif options.package and (options.soname or options.soname_regexp):
+        print "%suse --package and (--soname or --soname-regexp) separately%s" % (RD, NO)
+        sys.exit(1)
     else:
         search_broken = False
+
+    print "\n%sCollecting installed packages and files...%s" % (GR, NO)
+
+    installdb = InstallDB()
+    idb = installdb.installed_db
+    pkgfs = {}
+    pkgls = {}
+    for pkg, vr in idb.iteritems():
+        if re.search(DOCPKGPATTERN, pkg): continue
+        ver = re.sub(VRPATTERN, "\\1", vr)
+        files_xml = open(os.path.join(installdb.package_path(pkg), ctx.const.files_xml)).read()
+        pkgfs[pkg] = re.compile('<Path>(.*?)</Path>', re.I).findall(files_xml)
+        pkgls[pkg] = re.compile('<Path>(.*?\.so[\.\d]*)</Path>', re.I).findall(files_xml)
+
+    print "  done."
+
+    print "\n%sCollecting old paths info...%s" % (GR, NO)
+
+    oldpkgfs = {}
+    for ls in os.listdir(ctx.config.old_paths_cache_dir()):
+        with open("%s/%s" % (ctx.config.old_paths_cache_dir(), ls)) as f:
+            ver = f.readline().split(":").pop().strip()
+            paths = [l.strip() for l in f.readlines()]
+        oldpkgfs["%s-%s (previous)" % (ls, ver)] = paths
+
+    print "  done."
 
     if search_broken:
         soname_search = ["not"]
@@ -69,7 +99,14 @@ if __name__ == "__main__":
         ok_text = "Dynamic linking on your system is consistent"
         working_text = " consistency"
     else:
-        soname_search = sorted(args)
+        if options.package:
+            try:
+                soname_search = [os.path.basename(p) for p in pkgls[args[0]]]
+            except KeyError:
+                print "%s Package %s not found!%s" % (RD, args[0], NO)
+                sys.exit(1)
+        else:
+            soname_search = args
         sonames = " ".join(soname_search)
         m = hashlib.md5()
         m.update(sonames)
@@ -77,8 +114,9 @@ if __name__ == "__main__":
         head_text = "using given shared object(s) name"
         ok_text = "There are no dynamic links to %s" % sonames
         working_text = ""
-
+    
     print "\nChecking reverse dependencies..."
+    if options.package: print "  libs:", ", ".join(sorted(soname_search))
 
     print "\n%sCollecting system binaries and libraries...%s" % (GR, NO)
 
@@ -125,10 +163,11 @@ if __name__ == "__main__":
     if os.path.isfile("%s.3_rebuild" % llist):
         print "  using existing %s.3_rebuild." % llist
         with open("%s.3_rebuild" % llist) as f:
-            rebuild = [l.strip() for l in f.readlines()]
+            rebuild = dict((l, p.strip().split(";")) for l, p in [line.split(":") for line in f.readlines()])
     else:
-        rebuild = []
+        rebuild = {}
         for f in ffiles:
+            if os.path.islink(f): continue
             p = subprocess.Popen('LD_LIBRARY_PATH="$COMPLETE_LD_LIBRARY_PATH" ldd %s' % f, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = p.communicate()
             for line in out.split("\n"):
@@ -136,47 +175,62 @@ if __name__ == "__main__":
                     src, dst = line.split("=>")
                     src = src.strip()
                     dst = dst.split()[0].strip()
-                    for pattern in soname_search:
-                        if options.soname_regexp:
-                            if re.search(pattern, dst):
-                                print "  found %s" % f
-                                rebuild.append("%s:%s" % (f, src))
-                                break
-                        else:
-                            if pattern == dst:
-                                rebuild.append("%s:%s" % (f, dst))
-                                if search_broken:
-                                    print "  broken %s requires %s" % (f, src)
-                                else:
-                                    print "  found %s" % f
-        rebuild = sorted(rebuild)
-        open("%s.3_rebuild" % llist, "w").write("\n".join(rebuild))
+                    add = False
+                    if search_broken and dst in soname_search:
+                        add = True
+                        print "  broken %s requires %s" % (f, src)
+                    elif options.soname_regexp:
+                        for pattern in soname_search:
+                            if re.search(pattern, src):
+                                add = True
+                                print "  found %s requires %s" % (f, src)
+                    elif src in soname_search:
+                        add = True
+                        print "  found %s requires %s" % (f, src)
+                    if add:
+                        try:
+                            rebuild[src].append(f)
+                        except KeyError:
+                            rebuild[src] = [f]
+
+        open("%s.3_rebuild" % llist, "w").write("\n".join(["%s:%s" % (l, ";".join(p)) for l, p in sorted(rebuild.items())]))
     print "  done. (%s.3_rebuild)" % llist
 
     print "\n%sDetermining package names%s...%s" % (GR, working_text, NO)
 
-    installdb = InstallDB()
-    idb = installdb.installed_db
-    pkgfs = {}
-    for pkg, vr in idb.iteritems():
-        if re.search(DOCPKGPATTERN, pkg): continue
-        ver = re.sub(VRPATTERN, "\\1", vr)
-        files_xml = open(os.path.join(installdb.package_path(pkg), ctx.const.files_xml)).read()
-        pkgfs[pkg] = re.compile('<Path>(.*?\.so[\.\d]*)</Path>', re.I).findall(files_xml)
-
     if os.path.isfile("%s.4_names" % llist):
         print "  using existing %s.4_names." % llist
-        with open("%s.4_names" % llist) as f:
-            names = [l.strip() for l in f.readlines()]
+        with open("%s.4_lnames" % llist) as f:
+            lnames = dict((l, p.strip().split(";")) for l, p in [line.split(":") for line in f.readlines()])
+        with open("%s.4_rdnames" % llist) as f:
+            rdnames = dict((l, p.strip().split(";")) for l, p in [line.split(":") for line in f.readlines()])
     else:
-        names = []
-        for f in rebuild:
-            l, n = f.split(":")
+        lnames = {}
+        rdnames = {}
+        for lib, paths in sorted(rebuild.items()):
+            oldfound = False
+            for oldpkgname, oldpaths in sorted(oldpkgfs.items()):
+                if lib in [os.path.basename(f) for f in oldpaths]:
+                    lnames[lib] = [oldpkgname]
+                    oldfound = True
+                    break
+            if not oldfound:
+                libpat = re.compile(re.sub("\d+", r"\d+", lib))
+                for pkg, fs in pkgfs.iteritems():
+                    if lib in [os.path.basename(f) for f in fs] or (not options.package and re.search(libpat, " ".join(fs))):
+                        try:
+                            if not pkg in lnames[lib]: lnames[lib].append(pkg)
+                        except KeyError:
+                            lnames[lib] = [pkg]
             for pkg, fs in pkgfs.iteritems():
-                if l[1:] in fs:
-                    print "  %s has %s" % (pkg, l)
-                    names.append("%s:%s" % (pkg, l))
+                for path in paths:
+                    if path[1:] in fs:
+                        print "  %s has %s and it needs %s from %s" % (pkg, path, lib, " | ".join(lnames[lib]))
+                        try:
+                            if not pkg in rdnames[lib]: rdnames[lib].append(pkg)
+                        except KeyError:
+                            rdnames[lib] = [pkg]
             
-        names = sorted(names)
-        open("%s.4_names" % llist, "w").write("\n".join(names))
-    print "  done. (%s.4_names)" % llist
+        open("%s.4_lnames" % llist, "w").write("\n".join(["%s:%s" % (l, ";".join(p)) for l, p in sorted(lnames.items())]))
+        open("%s.4_rdnames" % llist, "w").write("\n".join(["%s:%s" % (l, ";".join(p)) for l, p in sorted(rdnames.items())]))
+    print "  done. (%s.4_lnames, %s.4_rdnames)" % (llist, llist)
