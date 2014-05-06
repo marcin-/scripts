@@ -84,11 +84,12 @@ if __name__ == "__main__":
     print "\n%sCollecting old paths info...%s" % (GR, NO)
 
     oldpkgfs = {}
-    for ls in os.listdir(ctx.config.old_paths_cache_dir()):
-        with open("%s/%s" % (ctx.config.old_paths_cache_dir(), ls)) as f:
-            ver = f.readline().split(":").pop().strip()
-            paths = [l.strip() for l in f.readlines()]
-        oldpkgfs["%s-%s (previous)" % (ls, ver)] = paths
+    if os.path.isdir(ctx.config.old_paths_cache_dir()):
+        for ls in os.listdir(ctx.config.old_paths_cache_dir()):
+            with open("%s/%s" % (ctx.config.old_paths_cache_dir(), ls)) as f:
+                ver = f.readline().split(":").pop().strip()
+                paths = [l.strip() for l in f.readlines()]
+            oldpkgfs["%s-%s (previous)" % (ls, ver)] = paths
 
     print "  done."
 
