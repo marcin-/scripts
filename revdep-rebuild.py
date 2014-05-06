@@ -225,7 +225,10 @@ if __name__ == "__main__":
             for pkg, fs in pkgfs.iteritems():
                 for path in paths:
                     if path[1:] in fs:
-                        print "  %s has %s and it needs %s from %s" % (pkg, path, lib, " | ".join(lnames[lib]))
+                        try:
+                            print "  %s has %s and it needs %s from %s" % (pkg, path, lib, " | ".join(lnames[lib]))
+                        except KeyError:
+                            print "%s  %s has %s and it needs %s, but %s not belongs to any installed package.%s" % (YL, pkg, path, lib, lib, NO)
                         try:
                             if not pkg in rdnames[lib]: rdnames[lib].append(pkg)
                         except KeyError:
