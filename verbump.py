@@ -12,7 +12,7 @@ RELEASE = """\
         <Update release="%(RELEASE)s">
             <Date>%(DATE)s</Date>
             <Version>%(VERSION)s</Version>
-            <Comment>Version bump.</Comment>
+            <Comment>%(COMMENT)s</Comment>
             <Name>%(NAME)s</Name>
             <Email>%(EMAIL)s</Email>
         </Update>"""
@@ -56,7 +56,7 @@ def bump(options, path):
     if len(old_archive) == 0:
         print("No <Archive> tag found in %s." % path)
         return
-    elif len(old_archive) > 1 and not options.many:
+    elif len(old_archive) > 1 and not options.many and not options.release and not options.rrelease:
         print("Multiarchive pspec.xml not supported yet.")
         sys.exit(1)
     old_archive = old_archive[0].uri
@@ -73,9 +73,6 @@ def bump(options, path):
             print "skipping %s, different versions" % specfile.source.name
             return
         new_archive = old_archive.replace(old_version, new_version)
-    elif not options.many and not options.uri and not options.ver:
-        print old_archive
-        sys.exit(0)
     elif options.uri:
         if not options.uri.split(":")[0] in ["ftp", "file", "http", "https", "mirrors"]:
             print "Wrong uri: %s" % options.uri
@@ -93,10 +90,22 @@ def bump(options, path):
             mver = ".".join(old_version.split(".")[:-1])
             if "/%s/" % mver in new_archive:
                  new_archive = new_archive.replace("/%s/" % mver, "/%s/" % ".".join(new_version.split(".")[:-1]))
+    elif options.release or options.rrelease:
+        new_type = old_type
+        new_archive = old_archive
+        new_version = old_version
+    else:
+        print old_archive
+        sys.exit(0)
     
     info["RELEASE"] = int(last.release) + 1
     info["DATE"] = time.strftime("%Y-%m-%d")
     info["VERSION"] = new_version
+    if options.release or options.rrelease:
+        info["COMMENT"] = "Release bump."
+    else:
+        info["COMMENT"] = "Version bump."
+
     new_release = RELEASE % info
     new_pspec = ''
     if new_type == "tgz": new_type = "targz"
@@ -118,6 +127,8 @@ def bump(options, path):
     open(path, "w").write(new_pspec)
     open(path, "a").write("\n")
 
+    if options.release or options.rrelease: return specfile.source.name
+    
     if os.getenv("USER") != "root":
         os.system("sudo pisi build %s --fetch" % path)
     else:
@@ -141,13 +152,15 @@ def bump(options, path):
     return specfile.source.name
 
 if __name__ == "__main__":
-    ver_ext_pattern = re.compile("^.+?-[\D^\-]*?([\d\._]+\d)[\D^\.]*?\.([\w\.]+)$")
+    ver_ext_pattern = re.compile("^.+?-?[\D^\-]*?([\d\._]+\d)[\D^\.]*?\.([\w\.]+)$")
     types = ["targz", "tarbz2", "tarlzma", "tarxz", "tarZ", "tar", "zip", "gz", "gzip", "bz2", "bzip2", "lzma", "xz"]
 
     usage = "Usage: %prog [options] [PATH]"
     parser = OptionParser(usage)
-    parser.add_option("-m", "--bump-many", dest="many", help="version bump for many packages")
+    parser.add_option("-r", "--release-bump", action="store_true", default=False, dest="release", help="release bump")
+    parser.add_option("-R", "--release-bump-recursively", action="store_true", default=False, dest="rrelease", help="release bump recursively")
     parser.add_option("-u", "--new-uri", dest="uri", help="version bump using specified uri")
+    parser.add_option("-m", "--bump-many", dest="many", help="version/release bump for many packages")
     parser.add_option("-v", "--new-version", dest="ver", help="version bump using specified version")
     parser.add_option("-f", "--from-version", dest="vfrom", help="modify versionFrom too")
     (options, args) = parser.parse_args()
@@ -162,12 +175,15 @@ if __name__ == "__main__":
     elif options.many and (options.uri or options.ver):
         print "Using options -m with -u or -v not allowed"
         sys.exit(1)
-    elif not options.many: bump(options, path)
-    else:
+    elif (options.release or options.rrelease) and (options.uri or options.ver):
+        print "Using options -r or -R with -u or -v not allowed"
+        sys.exit(1)
+    elif options.many:
         if not len(options.many.split("-")) == 2:
             print "Wrong argument for option -m: %s\nYou have to write 'version from' and 'version to' separated by '-'\ne.g: -m x.y-x.z" % options.many
             sys.exit(1)
 
+    if options.rrelease or options.many:
         bumped = []
         for root, dirs, files in os.walk(path):
             if "pspec.xml" in files:
@@ -179,3 +195,4 @@ if __name__ == "__main__":
             print "Bumped packages:"
             print "----------------"
             for b in bumped: print b
+    else: bump(options, path)
