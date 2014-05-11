@@ -94,6 +94,7 @@ class PisiApi:
 
     def install(self, pkgs, ignore_dep = False):
         pisi.api.ctx.set_option("ignore_dependency", ignore_dep)
+        pisi.api.ctx.set_option("store_lib_info", True)
         pisi.api.install(pkgs, ignore_file_conflicts=self.options.ignore_file_conflicts,
                                ignore_package_conflicts=self.options.ignore_package_conflicts,
                                reinstall=True)
