@@ -58,6 +58,7 @@ class PisiApi:
 
     def close(self):
         pisi.api.ctx.ui.flush_logs()
+        pisi.api.ctx.filesdb = None
 
     def build(self, pspec, ignore_dep = False):
         if not os.path.exists(pspec):
