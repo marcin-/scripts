@@ -14,15 +14,15 @@ from pisi.actionsapi import get
 from pisi.actionsapi import cmaketools
 from pisi.actionsapi import shelltools
 
-def configure(parameters = "", installPrefix = "/%s" % get.defaultprefixDIR(), buildType = "Release", pythonPath = "/usr/bin/python3", sourceDir = ".."):
+def configure(parameters = "", installPrefix = "/%s" % get.defaultprefixDIR(), sourceDir = ".."):
     ''' parameters -DLIB_INSTALL_DIR="target_dir" -DSOMETHING_USEFUL=1'''
 
     config_params = {
-                     "-DCMAKE_BUILD_TYPE": buildType,
+                     "-DCMAKE_BUILD_TYPE": "Release",
                      "-DLIB_INSTALL_DIR": "lib",
                      "-DLIBEXEC_INSTALL_DIR": "libexec",
                      "-DSYSCONF_INSTALL_DIR": "/etc",
-                     "-DPYTHON_EXECUTABLE": pythonPath,
+                     "-DPYTHON_EXECUTABLE": "/usr/bin/python3",
                      "-DPLUGIN_INSTALL_DIR": "/usr/lib/qt5/plugins",
                      "-DECM_MKSPECS_INSTALL_DIR": "/usr/lib/qt5/mkspecs/modules",
                      "-DKDE_INSTALL_USE_QT_SYS_PATHS": "ON",
