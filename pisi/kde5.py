@@ -32,7 +32,7 @@ def configure(parameters = "", installPrefix = "/%s" % get.defaultprefixDIR(), s
     shelltools.makedirs("build")
     shelltools.cd("build")
 
-    cmaketools.configure("%s %s" % ("".join(['%s="%s"' % (k, v) for k, v in config_params.items() if not "%s=" % k in parameters]), parameters),
+    cmaketools.configure("%s %s" % ("".join(['%s="%s" ' % (k, v) for k, v in config_params.items() if not "%s=" % k in parameters]), parameters),
                          installPrefix,
                          sourceDir)
 
