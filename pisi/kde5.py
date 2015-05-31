@@ -23,6 +23,8 @@ def configure(parameters = "", installPrefix = "/%s" % get.defaultprefixDIR(), s
                      "-DLIBEXEC_INSTALL_DIR": "libexec",
                      "-DSYSCONF_INSTALL_DIR": "/etc",
                      "-DPYTHON_EXECUTABLE": "/usr/bin/python3",
+                     "-DLOCALE_INSTALL_DIR": "/usr/share/locale",
+                     "-DQML_INSTALL_DIR": "lib/qt5/qml",
                      "-DPLUGIN_INSTALL_DIR": "/usr/lib/qt5/plugins",
                      "-DECM_MKSPECS_INSTALL_DIR": "/usr/lib/qt5/mkspecs/modules",
                      "-DKDE_INSTALL_USE_QT_SYS_PATHS": "ON",
