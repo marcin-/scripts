@@ -26,9 +26,9 @@ def configure(parameters = "", installPrefix = "/%s" % get.defaultprefixDIR(), s
                      ("-DQML_INSTALL_DIR", "lib/qt5/qml"),
                      ("-DPLUGIN_INSTALL_DIR", "/usr/lib/qt5/plugins"),
                      ("-DECM_MKSPECS_INSTALL_DIR", "/usr/lib/qt5/mkspecs/modules"),
-                     ("-DBUILD_TESTING", "OFF")
+                     ("-DBUILD_TESTING", "OFF"),
                      ("-DCMAKE_BUILD_TYPE", "Release"),
-                     ("-DPYTHON_EXECUTABLE", "/usr/bin/python3"),
+                     ("-DPYTHON_EXECUTABLE", "/usr/bin/python3")
                      ]
 
     shelltools.makedirs("build")
