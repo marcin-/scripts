@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pisilinux.org/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>pam_rundir</Name>
+        <Homepage>http://jjacky.com/pam_rundir</Homepage>
+        <Packager>
+            <Name>Marcin Bojara</Name>
+            <Email>marcin.bojara@gmail.com</Email>
+        </Packager>
+        <License>GPL2+</License>
+        <IsA>library</IsA>
+        <Summary>PAM Module to create and remove user runtime directories</Summary>
+        <Description>PAM module that can be used to provide user runtime directory on Linux systems, as described in the XDG Base Directory Specification.</Description>
+        <Archive sha1sum="9fc07af7e5cddede3ca08b1f1d66b3cb89f844dc" type="targz">http://jjacky.com/pam_rundir/pam_rundir-1.0.0.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>pam-devel</Dependency>
+        </BuildDependencies>
+    </Source>
+
+    <Package>
+        <Name>pam_rundir</Name>
+        <RuntimeDependencies>
+            <Dependency>pam</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/lib/security</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="1">
+            <Date>2020-09-10</Date>
+            <Version>1.0.0</Version>
+            <Comment>First release</Comment>
+            <Name>Marcin Bojara</Name>
+            <Email>marcin.bojara@gmail.com</Email>
+        </Update>
+    </History>
+</PISI>
