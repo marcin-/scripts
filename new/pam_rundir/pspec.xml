@@ -8,7 +8,7 @@
             <Name>Marcin Bojara</Name>
             <Email>marcin.bojara@gmail.com</Email>
         </Packager>
-        <License>GPL2+</License>
+        <License>GPL2</License>
         <IsA>library</IsA>
         <Summary>PAM Module to create and remove user runtime directories</Summary>
         <Description>PAM module that can be used to provide user runtime directory on Linux systems, as described in the XDG Base Directory Specification.</Description>
@@ -24,8 +24,9 @@
             <Dependency>pam</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="library">/lib/security</Path>
+            <Path fileType="library">/usr/lib/security</Path>
             <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
         </Files>
     </Package>
 
