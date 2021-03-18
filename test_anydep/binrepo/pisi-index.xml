@@ -1,0 +1,107 @@
+<PISI>
+    <Package>
+        <Name>test</Name>
+        <Summary xml:lang="en">test</Summary>
+        <Description xml:lang="en">Test</Description>
+        <PartOf>unknown</PartOf>
+        <License>MIT</License>
+        <RuntimeDependencies>
+            <AnyDependency>
+                <Dependency>test1</Dependency>
+                <Dependency>test2</Dependency>
+            </AnyDependency>
+        </RuntimeDependencies>
+        <History>
+            <Update release="1">
+                <Date>2021-03-17</Date>
+                <Version>1.0</Version>
+                <Comment>First release</Comment>
+                <Name>Marcin Bojara</Name>
+                <Email>marcin.bojara@gmail.com</Email>
+            </Update>
+        </History>
+        <BuildHost>localhost</BuildHost>
+        <Distribution>PisiLinux</Distribution>
+        <DistributionRelease>2.0</DistributionRelease>
+        <Architecture>x86_64</Architecture>
+        <InstalledSize>4</InstalledSize>
+        <PackageSize>1196</PackageSize>
+        <PackageHash>c003943d30ea154a261f8cbab4a575cc792f264e</PackageHash>
+        <InstallTarHash>da39a3ee5e6b4b0d3255bfef95601890afd80709</InstallTarHash>
+        <PackageURI>t/test/test-1.0-1-p2-x86_64.pisi</PackageURI>
+        <PackageFormat>1.2</PackageFormat>
+        <Source>
+            <Name>test</Name>
+            <Packager>
+                <Name>Marcin Bojara</Name>
+                <Email>marcin.bojara@gmail.com</Email>
+            </Packager>
+        </Source>
+    </Package>
+    <Package>
+        <Name>test1</Name>
+        <Summary xml:lang="en">test</Summary>
+        <Description xml:lang="en">Test</Description>
+        <PartOf>unknown</PartOf>
+        <License>MIT</License>
+        <History>
+            <Update release="1">
+                <Date>2021-03-17</Date>
+                <Version>1.0</Version>
+                <Comment>First release</Comment>
+                <Name>Marcin Bojara</Name>
+                <Email>marcin.bojara@gmail.com</Email>
+            </Update>
+        </History>
+        <BuildHost>localhost</BuildHost>
+        <Distribution>PisiLinux</Distribution>
+        <DistributionRelease>2.0</DistributionRelease>
+        <Architecture>x86_64</Architecture>
+        <InstalledSize>4</InstalledSize>
+        <PackageSize>1154</PackageSize>
+        <PackageHash>5cf86c217fa8220d22c2c1293d300b078c84e77a</PackageHash>
+        <InstallTarHash>da39a3ee5e6b4b0d3255bfef95601890afd80709</InstallTarHash>
+        <PackageURI>t/test1/test1-1.0-1-p2-x86_64.pisi</PackageURI>
+        <PackageFormat>1.2</PackageFormat>
+        <Source>
+            <Name>test1</Name>
+            <Packager>
+                <Name>Marcin Bojara</Name>
+                <Email>marcin.bojara@gmail.com</Email>
+            </Packager>
+        </Source>
+    </Package>
+    <Package>
+        <Name>test2</Name>
+        <Summary xml:lang="en">test</Summary>
+        <Description xml:lang="en">Test</Description>
+        <PartOf>unknown</PartOf>
+        <License>MIT</License>
+        <History>
+            <Update release="1">
+                <Date>2021-03-17</Date>
+                <Version>1.0</Version>
+                <Comment>First release</Comment>
+                <Name>Marcin Bojara</Name>
+                <Email>marcin.bojara@gmail.com</Email>
+            </Update>
+        </History>
+        <BuildHost>localhost</BuildHost>
+        <Distribution>PisiLinux</Distribution>
+        <DistributionRelease>2.0</DistributionRelease>
+        <Architecture>x86_64</Architecture>
+        <InstalledSize>4</InstalledSize>
+        <PackageSize>1154</PackageSize>
+        <PackageHash>98cdc7f0a579070aa6c413114d769a29f9391e56</PackageHash>
+        <InstallTarHash>da39a3ee5e6b4b0d3255bfef95601890afd80709</InstallTarHash>
+        <PackageURI>t/test2/test2-1.0-1-p2-x86_64.pisi</PackageURI>
+        <PackageFormat>1.2</PackageFormat>
+        <Source>
+            <Name>test2</Name>
+            <Packager>
+                <Name>Marcin Bojara</Name>
+                <Email>marcin.bojara@gmail.com</Email>
+            </Packager>
+        </Source>
+    </Package>
+</PISI>
